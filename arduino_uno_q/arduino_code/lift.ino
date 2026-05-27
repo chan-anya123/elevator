@@ -6,11 +6,11 @@
 /* --- New Pin Configuration (Low Active) --- */
 #define BUTTON_UP A2
 #define BUTTON_DOWN A3
-#define DOOR_SENSOR 3
-#define SOLENOID_UP 4    // Relay 1 4 sol_up
-#define SOLENOID_DOWN 7  // Relay 2 7 sol_down
-#define LED_UP 8         // Relay 3 8 led_up
-#define LED_DOWN 12      // Relay 4 12 led_down
+#define DOOR_SENSOR A1
+#define SOLENOID_UP 11   // Relay 1 11
+#define SOLENOID_DOWN 7  // Relay 2
+#define LED_UP 8         // Relay 3
+#define LED_DOWN 12      // Relay 4
 // Relay Logic
 #define RELAY_ON HIGH
 #define RELAY_OFF LOW
@@ -25,11 +25,14 @@ uint8_t framebuffer[NUM_LEDS][4];
 volatile int up_sol_state = 0, down_sol_state = 0;
 volatile int up_led_latch = 0, down_led_latch = 0;
 volatile unsigned long timer_up = 0, timer_down = 0;
-const int AUTO_DURATION = 800;  // time to solinoid press
+volatile unsigned long last_up_press = 0, last_down_press = 0;
+const unsigned long PRESS_LOCK_TIME = 5000;
+static bool prev_up = HIGH, prev_down = HIGH;
+const int AUTO_DURATION = 800;
 
 // LED WS2812B State
-volatile float global_brightness = 1.0;  //0.5
-volatile uint8_t target_r = 0, target_g = 255, target_b = 0;
+volatile float global_brightness = 0.1;
+volatile uint8_t target_r = 0, target_g = 0, target_b = 255;
 volatile bool led_update_req = true;
 
 /* --- RTOS Stacks --- */
@@ -66,39 +69,60 @@ void led_task(void *p1, void *p2, void *p3) {
 
 /* --- Logic & Safety Task --- */
 void safety_task(void *p1, void *p2, void *p3) {
+  static bool prevDoorOpen = false;
   for (;;) {
-    bool isDoorOpen = (digitalRead(DOOR_SENSOR) == DOOR_OPEN);  //low
-    // --- [จุดที่ 1] เคลียร์ไฟ LED เมื่อประตูเปิด ---
+    bool isDoorOpen = (digitalRead(DOOR_SENSOR) == DOOR_OPEN);
+    bool current_up = digitalRead(BUTTON_UP);
+    bool current_down = digitalRead(BUTTON_DOWN);
+    // detect door state change
+    if (isDoorOpen != prevDoorOpen) {
+      // reset button edge detection
+      prev_up = current_up;
+      prev_down = current_down;
+      // clear outputs when door opens
+      if (isDoorOpen) {
+        up_led_latch = 0;
+        down_led_latch = 0;
+      }
+      prevDoorOpen = isDoorOpen;
+      k_msleep(100);  // anti bounce door sensor
+      continue;
+    }
+    // DOOR OPEN
     if (isDoorOpen) {
-      up_led_latch = 0;
-      down_led_latch = 0;
-      if (digitalRead(BUTTON_UP) == LOW) {
+      if (current_up == LOW && prev_up == HIGH && millis() - last_up_press > PRESS_LOCK_TIME) {
+        last_up_press = millis();
         up_sol_state = 1;
         timer_up = millis();
       }
-      if (digitalRead(BUTTON_DOWN) == LOW) {
+      if (current_down == LOW && prev_down == HIGH && millis() - last_down_press > PRESS_LOCK_TIME) {
+        last_down_press = millis();
         down_sol_state = 1;
         timer_down = millis();
       }
     }
-    // --- [จุดที่ 2] ตรวจสอบปุ่มกด (ทำงานเฉพาะเมื่อประตูปิด) ---
-    if (!isDoorOpen) {
-      if (digitalRead(BUTTON_UP) == LOW) {
+    // DOOR CLOSED
+    else {
+      if (current_up == LOW && prev_up == HIGH && millis() - last_up_press > PRESS_LOCK_TIME) {
+        last_up_press = millis();
         up_sol_state = 1;
         up_led_latch = 1;
         timer_up = millis();
       }
-      if (digitalRead(BUTTON_DOWN) == LOW) {
+      if (current_down == LOW && prev_down == HIGH && millis() - last_down_press > PRESS_LOCK_TIME) {
+        last_down_press = millis();
         down_sol_state = 1;
         down_led_latch = 1;
         timer_down = millis();
       }
     }
+    prev_up = current_up;
+    prev_down = current_down;
     k_msleep(40);
   }
 }
 
-/* --- Output Control Task (Low Active Logic) --- */
+/* --- Output Control Task (high Active Logic) --- */
 void motor_task(void *p1, void *p2, void *p3) {
   for (;;) {
     unsigned long now = millis();
@@ -153,7 +177,7 @@ String set_led_rpc(String payload) {
     target_g = 255;
     target_r = 255;
     target_b = 255;
-  } else if (color_code == "OFF" || color_code == "S") {
+  } else if (color_code == "OFF") {
     target_g = 0;
     target_r = 0;
     target_b = 0;
@@ -166,14 +190,12 @@ String set_led_rpc(String payload) {
 }
 
 String move_rpc(String action) {
-  if (action == "U" || action == "1") {
+  if (action == "1") {
     up_sol_state = 1;
-    // up_led_latch = 1;
     timer_up = millis();
     return "SOL_UP";
-  } else if (action == "D" || action == "2") {
+  } else if (action == "2") {
     down_sol_state = 1;
-    // down_led_latch = 1;
     timer_down = millis();
     return "SOL_DOWN";
   } else if (action == "3") {  // เปิดเฉพาะไฟขึ้น
@@ -220,11 +242,6 @@ void bridge_task(void *p1, void *p2, void *p3) {
 /* --- Setup & Loop --- */
 void setup() {
 
-  digitalWrite(SOLENOID_UP, RELAY_OFF);
-  digitalWrite(SOLENOID_DOWN, RELAY_OFF);
-  digitalWrite(LED_UP, RELAY_OFF);
-  digitalWrite(LED_DOWN, RELAY_OFF);
-
   pinMode(SOLENOID_UP, OUTPUT);
   pinMode(SOLENOID_DOWN, OUTPUT);
   pinMode(LED_UP, OUTPUT);
@@ -233,6 +250,11 @@ void setup() {
   pinMode(BUTTON_UP, INPUT_PULLUP);
   pinMode(BUTTON_DOWN, INPUT_PULLUP);
   pinMode(DOOR_SENSOR, INPUT_PULLUP);
+
+  digitalWrite(SOLENOID_UP, RELAY_OFF);
+  digitalWrite(SOLENOID_DOWN, RELAY_OFF);
+  digitalWrite(LED_UP, RELAY_OFF);
+  digitalWrite(LED_DOWN, RELAY_OFF);
 
   k_thread_create(&safety_thread_data, safety_stack, STACK_SIZE, safety_task, NULL, NULL, NULL, 7, 0, K_NO_WAIT);
   k_thread_create(&motor_thread_data, motor_stack, STACK_SIZE, motor_task, NULL, NULL, NULL, 7, 0, K_NO_WAIT);
