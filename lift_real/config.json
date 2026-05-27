@@ -1,0 +1,13 @@
+{
+    "floor_name": "2",
+    "lift_id": "A",
+    "addr": {
+        "floor": 0,
+        "heartbeat": 1,
+        "lift_status": 2,
+        "command": 3,
+        "door": 4,
+        "led_target": 5,
+        "led_bright": 7
+    }
+}

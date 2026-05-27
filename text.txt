@@ -1,0 +1,27 @@
+Lift Board Update Manual
+
+##### MCU PART #####
+1. Install and use Arduino IDE version `2.3.8`
+2. Open RTOS project in Arduino IDE
+3. Upload firmware
+    * via Wi-Fi board upload
+    * password arduino123
+4. If Wi-Fi board not found:
+    * use USB upload
+
+##### MPU PART #####
+1. Check board name (in google sheet)
+2. chmod +x setup.sh
+3. Open terminal 
+    ./setup.sh lift473f.local
+**** Change `lift473f.local` to target board name. ****
+4. Wait around 3-10 seconds
+    System will:
+    * upload `main.py`
+    * upload `templates/index.html`
+    * install requirements
+    * restart lift service automatically
+    No password input required.
+5. SUCCESS MESSAGE
+✅ DONE lift473f.local
+

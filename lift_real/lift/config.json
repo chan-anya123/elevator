@@ -1,0 +1,17 @@
+{
+    "network_mode": "dhcp",
+    "static_ip": "",
+    "gateway": "",
+    "subnet": "",
+    "floor_name": "1",
+    "lift_id": "B",
+    "addr": {
+        "floor": 10,
+        "heartbeat": 11,
+        "lift_status": 12,
+        "command": 13,
+        "door": 14,
+        "led_target": 15,
+        "led_bright": 17
+    }
+}

@@ -1,0 +1,37 @@
+### install ###
+sudo apt install python3-msgpack
+sudo apt install python3-flask python3-pip -y
+sudo pip3 install pyModbusTCP --break-system-packages
+
+
+####3 set uo hotsport #####
+sudo nmcli device wifi rescan
+sudo nmcli device wifi hotspot ssid MyLift_8761 password 12345678
+sudo nmcli connection modify Hotspot connection.id MyLiftHotspot
+
+### command for check tcp that use MessagePack RPC ###
+python3 -c "import socket, msgpack, time; s=socket.socket(socket.AF_UNIX, socket.SOCK_STREAM); s.connect('/var/run/arduino-router.sock'); s.sendall(msgpack.packb([0, 1, 'status', []])); print(msgpack.unpackb(s.recv(4096))[3])"
+
+### check statust arduino-router ###
+sudo journalctl -u arduino-router -f
+sudo journalctl -u lift-service.service -f
+
+sudo systemctl daemon-reload
+
+### make srvice file for autorun ###
+sudo nano /etc/systemd/system/lift-service.service
+
+### tcp modbus ###
+Address	    data	        value
+0	        Floor	        1, 2, ...
+1	        heartbeat	    1, 2, ...
+2	        Lift status	    0 (Not ready), 1 (Ready)
+3	        Command	        1 (Up), 2 (Down), 0 (Stop)
+4	        Door	        1 (Open), 2 (Closed)
+6           target          1, 2, ...
+7           bright          0-100
+
+
+sudo nmcli connection modify "Next" connection.autoconnect yes connection.autoconnect-priority 100
+sudo nmcli device set wlan0 autoconnect yes
+sudo nmcli connection modify "MyLiftHotspot" connection.autoconnect yes
