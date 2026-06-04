@@ -66,7 +66,7 @@ class MasterSystem:
                 self.max_timeout = config['settings']['max_timeout']
                 self.robot_dir_regs = config['settings'].get('robot_dir_registers', [8, 18, 28, 38])
         except Exception as e:
-            print(f"❌ Load Config Error: {e}")
+            print(f"!!!!! Load Config Error: {e} !!!!!")
             exit(1)
 
     def log(self, msg):
@@ -201,7 +201,7 @@ class MasterSystem:
                     if not mpu_data:
                         station['fail_count'] = station.get('fail_count', 0) + 1
                         if station['fail_count'] >= 5 and station.get('is_active', True):
-                            self.log(f"⚠️ Floor {f_key} OFFLINE. Attempting Recovery...")
+                            self.log(f"!!!!! Floor {f_key} OFFLINE. Attempting Recovery... !!!!!")
                             station['is_active'] = False
                             self.restart_lift_service(f_key)
                         continue
@@ -234,7 +234,7 @@ class MasterSystem:
                     else:
                         if time.time() - station.get('last_update_time', 0) > 10.0:
                             if station.get('is_active', True):
-                                self.log(f"🚨 Floor {f_key} Heartbeat Frozen! Triggering Restart...")
+                                self.log(f"!!!!! Floor {f_key} Heartbeat Frozen! Triggering Restart... !!!!!")
                                 station['is_active'] = False
                                 self.restart_lift_service(f_key)
                 
@@ -267,7 +267,7 @@ class MasterSystem:
     def run_mission(self, station_key, lift_type):
         station = self.stations.get(station_key)
         if not station:
-            self.log(f"❌ Mission aborted: Station {station_key} not found")
+            self.log(f"!!!!! Mission aborted: Station {station_key} not found !!!!!")
             return
             
         addr = station['addr']
@@ -320,7 +320,7 @@ class MasterSystem:
                         r_pos_now = self.robot_client.read_holding_registers(FLOOR_REG, 1)
                         d_stat = self.read_modbus(station_key, DOOR_REG)
                         if (r_pos_now and r_pos_now[0] == target_floor_num) and (d_stat and d_stat[0] == 1):
-                            self.log(f"{lift_type} Arrived at Floor {target_floor_num}")
+                            self.log(f"----- {lift_type} Arrived at Floor {target_floor_num} -----")
                             mission_status = Sequence.PULSING
                         time.sleep(0.5)
 
@@ -351,27 +351,27 @@ class MasterSystem:
                         self.sync_to_robot(DOOR_REG, 1 if door_val == 1 else 2)
 
                         if any_robot_active: 
-                            # self.log(f"goooo!!!!")
+                            self.log(f"goooo!!!!")
                             self.write_modbus(station_key, COLOR_REG, LedColor.PINK)
                             self.write_modbus(station_key, CMD_REG, action_cmd)
-                            time.sleep(0.5)
+                            time.sleep(1)
                         elif all_cleared:
-                            self.log("!!!!Success!!!!!")
+                            self.log("----- Success -----")
                             self.write_modbus(station_key, CMD_REG, 0) 
                             mission_status = Sequence.IDLE             
                             break
                         else:
                             if door_val == 1:
-                                # self.log(f"⚡ Pulse doorOPEN")
+                                self.log(f"⚡ Pulse doorOPEN")
                                 self.write_modbus(station_key, COLOR_REG, LedColor.PINK)
                                 self.write_modbus(station_key, CMD_REG, 0)
-                                time.sleep(1)
+                                time.sleep(5)
                                 self.write_modbus(station_key, CMD_REG, action_cmd)
                             else: 
-                                self.log(f"!!!!{lift_type} Door CLOSED - Resetting Timer!!!!!")
+                                self.log(f"!!!! {lift_type} Door CLOSED - Resetting Timer !!!!!")
                                 self.write_modbus(station_key, COLOR_REG, LedColor.RED)
                                 self.write_modbus(station_key, CMD_REG, 0)
-                                time.sleep(1)
+                                time.sleep(5)
                                 self.write_modbus(station_key, CMD_REG, action_cmd)
                            
                         if time.time() - start_pulsing_time >= self.max_timeout:
@@ -380,9 +380,9 @@ class MasterSystem:
                             continue
                         time.sleep(0.2)
             
-            self.log(f"MISSION END: {station_key}")
+            self.log(f"----- MISSION END: {station_key} -----")
         except Exception as e:
-            self.log(f"❌ {lift_type} Mission Error: {e}")
+            self.log(f"!!!!! {lift_type} Mission Error: {e} !!!!!")
             mission_status = Sequence.ERROR
         finally:
             self.cleanup_mission(station_key, lift_type, TARGET_REG, READY_REG, CMD_REG, COLOR_REG)
@@ -408,7 +408,7 @@ class MasterSystem:
             subprocess.Popen(ssh_cmd, shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
             self.stations[station_key]['last_update_time'] = time.time() + 15.0 
         except Exception as e:
-            self.log(f"❌ SSH Restart Failed: {e}")
+            self.log(f"!!!!! SSH Restart Failed: {e} !!!!!")
 
 if __name__ == '__main__':
     master = MasterSystem()
