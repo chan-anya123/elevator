@@ -1,10 +1,14 @@
 {
-    
     "robot_ip": "192.168.10.5",
     "settings": {
-        "brightness": 100,
-        "max_timeout": 20, 
-        "robot_dir_registers": [8, 18, 28, 38]
+        "brightness": 10,
+        "max_timeout": 50,
+        "robot_dir_registers": [
+            8,
+            18,
+            28,
+            38
+        ]
     },
     "lifts": [
         {
@@ -31,7 +35,6 @@
             "reg_offset": 0,
             "comment": "Lift A4"
         },
-
         {
             "ip": "192.168.20.66",
             "mac": "14:B5:CD:0F:65:0F",
