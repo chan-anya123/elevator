@@ -529,7 +529,7 @@ def admin_panel():
     </head>
     <body>
         <div class="container">
-            <h2>Lift Master System Config (All-in-One File)</h2>
+            <h2>Lift Master System Config</h2>
             <p>update configuration for all lifts</p>
             {{ msg|safe }}
             <form method="POST">
