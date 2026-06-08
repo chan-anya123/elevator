@@ -13,49 +13,41 @@
     "lifts": [
         {
             "ip": "192.168.20.70",
-            "mac": "14:B5:CD:10:55:63",
             "reg_offset": 0,
             "comment": "Lift A1"
         },
         {
             "ip": "192.168.20.39",
-            "mac": "14:B5:CD:0A:87:61",
             "reg_offset": 0,
             "comment": "Lift A2"
         },
         {
             "ip": "192.168.20.42",
-            "mac": "14:B5:CD:E1:47:A7",
             "reg_offset": 0,
             "comment": "Lift A3"
         },
         {
             "ip": "192.168.20.52",
-            "mac": "14:B5:CD:0F:94:35",
             "reg_offset": 0,
             "comment": "Lift A4"
         },
         {
             "ip": "192.168.20.66",
-            "mac": "14:B5:CD:0F:65:0F",
             "reg_offset": 10,
             "comment": "Lift B1"
         },
         {
             "ip": "192.168.20.43",
-            "mac": "14:B5:CD:11:90:51",
             "reg_offset": 10,
             "comment": "Lift B2"
         },
         {
             "ip": "192.168.20.38",
-            "mac": "14:B5:CD:0F:45:4F",
             "reg_offset": 10,
             "comment": "Lift B3"
         },
         {
             "ip": "192.168.20.37",
-            "mac": "14:B5:CD:E1:41:EF",
             "reg_offset": 10,
             "comment": "Lift B4"
         }
