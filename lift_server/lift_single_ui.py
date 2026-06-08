@@ -8,8 +8,32 @@ import subprocess
 import socket
 import os
 from flask import Flask, jsonify, request, render_template_string
+from datetime import datetime
+import platform
 
 CONFIG_FILE = 'lift_config.json'
+VERSION = "1.0.0"
+
+DEFAULT_CONFIG = {
+    "robot_ip": "192.168.10.5",
+    "settings": {
+        "brightness": 100,
+        "max_timeout": 20, 
+        "robot_dir_registers": [8, 18, 28, 38]
+    },
+    "lifts": [
+        {"ip": "192.168.20.70", "reg_offset": 0, "comment": "Lift A1"},
+        {"ip": "192.168.20.39", "reg_offset": 0, "comment": "Lift A2"},
+        {"ip": "192.168.20.42", "reg_offset": 0, "comment": "Lift A3"},
+        {"ip": "192.168.20.52", "reg_offset": 0, "comment": "Lift A4"},
+        {"ip": "192.168.20.66", "reg_offset": 10, "comment": "Lift B1"},
+        {"ip": "192.168.20.43", "reg_offset": 10, "comment": "Lift B2"},
+        {"ip": "192.168.20.38", "reg_offset": 10, "comment": "Lift B3"},
+        {"ip": "192.168.20.37", "reg_offset": 10, "comment": "Lift B4"}
+    ]
+}
+
+master_node = None
 
 class Sequence(IntEnum):
     IDLE    = 0
@@ -22,27 +46,6 @@ class Sequence(IntEnum):
 class LedColor(IntEnum):
     GREEN  = 1; BLUE   = 2; PURPLE = 3; RED    = 4; OFF = 5
     YELLOW = 6; ORANGE = 7; PINK   = 8; WHITE  = 9
-
-DEFAULT_CONFIG = {
-    "robot_ip": "192.168.10.5",
-    "settings": {
-        "brightness": 100,
-        "max_timeout": 20, 
-        "robot_dir_registers": [8, 18, 28, 38]
-    },
-    "lifts": [
-        {"ip": "192.168.20.70", "mac": "14:B5:CD:10:55:63", "reg_offset": 0, "comment": "Lift A1"},
-        {"ip": "192.168.20.39", "mac": "14:B5:CD:0A:87:61", "reg_offset": 0, "comment": "Lift A2"},
-        {"ip": "192.168.20.42", "mac": "14:B5:CD:E1:47:A7", "reg_offset": 0, "comment": "Lift A3"},
-        {"ip": "192.168.20.52", "mac": "14:B5:CD:0F:94:35", "reg_offset": 0, "comment": "Lift A4"},
-        {"ip": "192.168.20.66", "mac": "14:B5:CD:0F:65:0F", "reg_offset": 10, "comment": "Lift B1"},
-        {"ip": "192.168.20.43", "mac": "14:B5:CD:11:90:51", "reg_offset": 10, "comment": "Lift B2"},
-        {"ip": "192.168.20.38", "mac": "14:B5:CD:0F:45:4F", "reg_offset": 10, "comment": "Lift B3"},
-        {"ip": "192.168.20.37", "mac": "14:B5:CD:E1:41:EF", "reg_offset": 10, "comment": "Lift B4"}
-    ]
-}
-
-master_node = None
 
 class MasterSystem:
     def __init__(self, config_path=CONFIG_FILE):
@@ -59,7 +62,6 @@ class MasterSystem:
             "B": {"floor": -2, "door": ""}
         }
         
-        # โหลดคอนฟิก
         self.load_config(self.config_path)
         
         max_reg = max(self.robot_dir_regs) if self.robot_dir_regs else 38
@@ -67,7 +69,6 @@ class MasterSystem:
         self.lift_addrs = {"A": {}, "B": {}}
         self.robot_client = ModbusClient(host=self.robot_ip, port=502, auto_open=True, timeout=1.0)
         
-        # เริ่มการสแกนและลูปควบคุม (แยกเป็น Background Threads)
         threading.Thread(target=self.init_and_discover, daemon=True).start()
 
     def load_config(self, path):
@@ -80,14 +81,12 @@ class MasterSystem:
             except Exception as e:
                 print(f"!!!!! Local Config File Error: {e} -> Using Default !!!!!")
         else:
-            # ถ้าไม่มีไฟล์ ให้สร้างไฟล์เริ่มต้นขึ้นมา
             try:
                 with open(path, 'w', encoding='utf-8') as f:
                     json.dump(DEFAULT_CONFIG, f, indent=4, ensure_ascii=False)
             except:
                 pass
 
-        # กระจายค่าเข้าสู่ตัวแปรระบบ
         self.config_lifts = config['lifts']
         self.robot_ip = config['robot_ip']
         self.bright = config['settings']['brightness']
@@ -96,11 +95,19 @@ class MasterSystem:
         print(f"Config Initialized -> Robot IP: {self.robot_ip}, Total Stations: {len(self.config_lifts)}")
 
     def init_and_discover(self):
-        # รันหลังจากทำโครงสร้างเบื้องต้นเสร็จ เพื่อไม่ให้กวนการเปิด Flask API
         self.discover_stations()
         threading.Thread(target=self.main_control_loop, daemon=True).start()
         threading.Thread(target=self.mission_scanner_loop, daemon=True).start()
+        # --- [เพิ่มระบบสแกนซ้ำเบื้องหลังอัตโนมัติ] ---
+        threading.Thread(target=self.rediscover_loop, daemon=True).start()
+        
         self.log(f"Master System Control Core Started.")
+
+    def rediscover_loop(self):
+        while True:
+            time.sleep(600)  # auto-scan every 10 minutes
+            self.log("Auto-Scanning for new or reconnected lift stations...")
+            self.discover_stations()
 
     def get_my_subnet(self):
         s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -116,14 +123,6 @@ class MasterSystem:
 
     def log(self, msg):
         print(f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] {msg}")
-
-    def write_led(self, station_key, color_id, bright=None):
-        if station_key not in self.stations: return
-        addr = self.stations[station_key]['addr']
-        val_bright = bright if bright is not None else self.bright
-        
-        self.write_modbus(station_key, addr.get("led_bright", 7), val_bright)
-        self.write_modbus(station_key, addr.get("led_target", 5), color_id)
 
     def read_modbus(self, station_key, reg, count=1):
         if station_key not in self.stations: return None
@@ -175,9 +174,6 @@ class MasterSystem:
 
         for t in threads:
             t.join(timeout=0.05) 
-            
-        for k in sorted(self.stations.keys()):
-            self.log(f"Ready: Floor {k} at {self.stations[k]['ip']}")
 
     def scan_worker(self, ip):
         try:
@@ -190,6 +186,17 @@ class MasterSystem:
                 station_key = f"{f_id}{l_id}"
                 
                 with self.lock:
+                    # --- [จุดเซฟตี้ใหม่: ป้องกันการโหลดสัญญานซ้ำ] ---
+                    if station_key in self.stations:
+                        # ถ้าลิฟต์ตัวนี้หลุดไปก่อนหน้านี้ ให้ปลุกกลับมาทำงานต่อได้เลย
+                        if not self.stations[station_key]['is_active']:
+                            self.log(f"Floor {station_key} reconnected and revived via Auto-Scan.")
+                            self.stations[station_key]['is_active'] = True
+                            self.stations[station_key]['last_update_time'] = time.time()
+                            self.stations[station_key]['fail_count'] = 0
+                        return  # ข้ามการสร้าง Modbus Client ใหม่เพื่อความปลอดภัย
+                    # --------------------------------------------------
+                    
                     self.lift_addrs[l_id] = addr_map
                     if l_id not in self.lifts:
                         self.lifts[l_id] = {"floor": -1, "door": "CLOSED", "busy": False}
@@ -204,6 +211,7 @@ class MasterSystem:
                         'fail_count': 0,
                         'is_active': True
                     }
+                    self.log(f"Ready: Floor {station_key} at {ip}")
         except:
             pass
 
@@ -225,7 +233,9 @@ class MasterSystem:
                 with self.lock:
                     self.robot_live_data = robot_data
 
-                for f_key, station in self.stations.items():
+                for f_key, station in list(self.stations.items()):
+                    if not station.get('is_active'): continue  # ข้ามถ้าสถานีนั้นออฟไลน์อยู่
+                    
                     addr = station['addr']
                     l_type = station.get('lift_id', 'A')
                     current_station_floor = int(''.join(filter(str.isdigit, f_key)))
@@ -262,9 +272,6 @@ class MasterSystem:
                     if val_hb != station.get('last_heartbeat', -1):
                         station['last_heartbeat'] = val_hb
                         station['last_update_time'] = time.time()
-                        if not station.get('is_active'):
-                            self.log(f"Floor {f_key} is now ACTIVE")
-                            station['is_active'] = True
                     else:
                         if time.time() - station.get('last_update_time', 0) > 10.0:
                             if station.get('is_active', True):
@@ -287,7 +294,7 @@ class MasterSystem:
                         target_floor = t_val[0]
                         station_key = f"{target_floor}{lid}"
 
-                        if station_key in self.stations:
+                        if station_key in self.stations and self.stations[station_key].get('is_active'):
                             self.lifts[lid]["busy"] = True
                             self.sync_to_robot(target_reg, 0) 
                             threading.Thread(target=self.run_mission, 
@@ -297,7 +304,7 @@ class MasterSystem:
 
     def run_mission(self, station_key, lift_type):
         station = self.stations.get(station_key)
-        if not station: return
+        if not station or not station.get('is_active'): return
         addr = station['addr']
         
         CMD_REG    = addr.get("command", 0)
@@ -316,7 +323,7 @@ class MasterSystem:
             r_pos = self.robot_client.read_holding_registers(FLOOR_REG, 1)
             current_f = r_pos[0] if r_pos else 0
 
-            all_floors = [int(''.join(filter(str.isdigit, k))) for k in self.stations.keys()]
+            all_floors = [int(''.join(filter(str.isdigit, k))) for k, v in self.stations.items() if v.get('is_active')]
             lowest_floor = min(all_floors) if all_floors else 1
             highest_floor = max(all_floors) if all_floors else 4
             
@@ -329,6 +336,11 @@ class MasterSystem:
                 led_cmd = 3 if target_floor_num >= current_f else 4
 
             while mission_status not in [Sequence.DONE, Sequence.ERROR]:
+                if not station.get('is_active'):
+                    self.log(f"!!!!! Mission Aborted: Floor {station_key} went offline during execution !!!!!")
+                    mission_status = Sequence.ERROR
+                    break
+
                 match mission_status:
                     case Sequence.IDLE:
                         mission_status = Sequence.MOVING
@@ -425,7 +437,12 @@ class MasterSystem:
         if station_key not in self.stations: return
         ip = self.stations[station_key]['ip']
         self.log(f"Self-Healing: Restarting service on {station_key} ({ip})...")
-        ssh_cmd = f"ssh -o ConnectTimeout=5 arduino@{ip} 'sudo systemctl restart lift-service.service'"
+        
+        if platform.system() == "Windows":
+            ssh_cmd = f'ssh -o ConnectTimeout=5 arduino@{ip} "sudo systemctl restart lift-service.service"'
+        else:
+            ssh_cmd = f"ssh -o ConnectTimeout=5 arduino@{ip} 'sudo systemctl restart lift-service.service'"
+        
         try:
             subprocess.Popen(ssh_cmd, shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
             self.stations[station_key]['last_update_time'] = time.time() + 15.0 
@@ -443,6 +460,7 @@ def board_status():
     if master_node:
         return jsonify({
             "status": "online",
+            "version": VERSION,
             "lifts": master_node.lifts
         })
     return jsonify({"status": "master_starting"}), 503
@@ -460,8 +478,11 @@ def admin_panel():
     msg = ""
     if request.method == 'POST':
         try:
-            raw_json = request.form.get('json_data')
-            parsed_json = json.loads(raw_json)
+            if request.is_json:
+                parsed_json = request.get_json()
+            else:
+                raw_json = request.form.get('json_data')
+                parsed_json = json.loads(raw_json)
             
             if "robot_ip" in parsed_json and "lifts" in parsed_json and "settings" in parsed_json:
                 with open(CONFIG_FILE, 'w', encoding='utf-8') as f:
@@ -470,10 +491,17 @@ def admin_panel():
                 if master_node:
                     master_node.load_config(CONFIG_FILE)
                 
-                msg = '<div style="color: #2ecc71; font-weight: bold; margin-bottom: 15px;">💾 save success!</div>'
+                if request.is_json:
+                    return jsonify({"status": "success", "message": "Save success & Hot-Reload applied!"}), 200
+                
+                msg = '<div style="color: #2ecc71; font-weight: bold; margin-bottom: 15px;">💾 Save success & Hot-Reload applied!</div>'
             else:
-                msg = '<div style="color: #e74c3c; font-weight: bold; margin-bottom: 15px;">❌ save failed: missing required keys in JSON data</div>'
+                if request.is_json:
+                    return jsonify({"status": "error", "message": "missing required keys"}), 400
+                msg = '<div style="color: #e74c3c; font-weight: bold; margin-bottom: 15px;">❌ Save failed: missing required keys in JSON data</div>'
         except Exception as e:
+            if request.is_json:
+                return jsonify({"status": "error", "message": str(e)}), 400
             msg = f'<div style="color: #e74c3c; font-weight: bold; margin-bottom: 15px;">❌ JSON format error: {e}</div>'
 
     current_data = DEFAULT_CONFIG
@@ -502,6 +530,7 @@ def admin_panel():
     <body>
         <div class="container">
             <h2>Lift Master System Config (All-in-One File)</h2>
+            <p>update configuration for all lifts</p>
             {{ msg|safe }}
             <form method="POST">
                 <textarea name="json_data">{{ json_string }}</textarea>
