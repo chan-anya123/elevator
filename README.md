@@ -128,27 +128,49 @@ The system provides multiple interfaces for integration with Robots, PLCs, and e
 **Example Response (`/status`):**
 ```json
 {
-  "status": "online",
-  "version": "1.0.2",
-  "lifts": {
-    "A": {"floor": 2, "door": "CLOSED", "busy": false},
-    "B": {"floor": 1, "door": "OPEN", "busy": false}
-  }
+    "lifts": {
+        "A": {
+            "busy": false,
+            "door": "CLOSED",
+            "floor": 1
+        },
+        "B": {
+            "busy": false,
+            "door": "CLOSED",
+            "floor": 2
+        }
+    },
+    "status": "online",
+    "version": "1.0.8"
 }
+
 ```
 
 ### 2. Modbus TCP (Robot Integration - Port 502)
 
-The Master Server acts as a Modbus Client/Server bridge to sync data with the Robot PLC. (lift_A start reg = 0, lift_B start reg = 10)
+The Master Server acts as a Modbus Client/Server bridge to sync data with the Robot PLC. By default, **Lift A** starts at register **0**, and **Lift B** starts at register **10**.
 
 | Address | Type | Name | Description |
 |---|---|---|---|
-| `Target Reg` | R/W | Mission Target | Set floor number to trigger a mission. |
-| `Ready Reg` | R | Lift Ready | 1 = Lift is at target and ready. |
-| `Door Reg` | R | Door Status | 1 = Open, 2 = Closed. |
-| `Floor Reg` | R | Current Floor | Real-time floor position. |
+| `offset + 0` | R | Current Floor | Real-time floor position reported by the lift. |
+| `offset + 2` | R | Lift Ready | 1 = Lift is at target floor and ready for robot. |
+| `offset + 4` | R | Door Status | 1 = Open, 2 = Closed. |
+| `offset + 6` | R/W | Mission Target | Write target floor number here to call the lift. |
+| *Config List* | R/W | Robot Direction | Signal robot activity: **1** = Moving IN, **2** = Moving OUT, **0** = Clear. |
 
-*Note: Register addresses are defined per lift in `lift_config.json` via `reg_offset` and `robot_dir_registers`.*
+### 🤖 Robot Direction Handshake Logic
+
+The Master Server employs a specific handshake logic to ensure the robot has safely entered/exited the lift before completing a mission. This logic is governed by the `robot_dir_registers` defined in the configuration.
+
+**Handshake Steps:**
+1. **Waiting for Activity**: Once the lift arrives at the target floor and doors open, the Master Server monitors all registers in the `robot_dir_registers` list.
+2. **Detection**: The robot must write a value of **1** or **2** to its assigned direction register. The Master Server "locks on" to this register once activity is detected.
+3. **Pulsing State**: While the register holds a non-zero value, the Master Server maintains the mission active (sending pulses to keep doors open/active).
+4. **Completion**: The mission is only marked as **SUCCESS** after:
+   - At least one configured register was detected as active (1 or 2).
+   - **AND** all registers that were active have returned to **0**.
+
+*Note: If the robot fails to signal (never writes 1 or 2) within the `max_timeout` period, the mission will end with an **ERROR** state.*
 
 ### 3. Modbus TCP (Lift Station - Port 1502)
 
