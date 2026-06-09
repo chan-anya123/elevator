@@ -10,6 +10,7 @@ import os
 from flask import Flask, jsonify, request, render_template_string
 from datetime import datetime
 import platform
+from concurrent.futures import ThreadPoolExecutor
 
 CONFIG_FILE = 'lift_config.json'
 VERSION = "1.0.0"
@@ -77,7 +78,7 @@ class MasterSystem:
             try:
                 with open(path, 'r', encoding='utf-8') as f:
                     config = json.load(f)
-                    print(">>> Load Local Config Successfully! <<<")
+                    print("----- Load Local Config Successfully! -----")
             except Exception as e:
                 print(f"!!!!! Local Config File Error: {e} -> Using Default !!!!!")
         else:
@@ -165,15 +166,8 @@ class MasterSystem:
         for i in range(1, 255):
             target_ips.add(f"{base_ip}{i}")
         
-        threads = []
-        for ip in target_ips:
-            t = threading.Thread(target=self.scan_worker, args=(ip,))
-            t.daemon = True 
-            t.start()
-            threads.append(t)
-
-        for t in threads:
-            t.join(timeout=0.05) 
+        with ThreadPoolExecutor(max_workers=50) as executor:
+            executor.map(self.scan_worker, target_ips)
 
     def scan_worker(self, ip):
         try:
@@ -438,13 +432,15 @@ class MasterSystem:
         ip = self.stations[station_key]['ip']
         self.log(f"Self-Healing: Restarting service on {station_key} ({ip})...")
         
-        if platform.system() == "Windows":
-            ssh_cmd = f'ssh -o ConnectTimeout=5 arduino@{ip} "sudo systemctl restart lift-service.service"'
-        else:
-            ssh_cmd = f"ssh -o ConnectTimeout=5 arduino@{ip} 'sudo systemctl restart lift-service.service'"
+        ssh_cmd = [
+            "ssh",
+            "-o", "ConnectTimeout=5",
+            f"arduino@{ip}",
+            "sudo systemctl restart lift-service.service"
+        ]
         
         try:
-            subprocess.Popen(ssh_cmd, shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            subprocess.Popen(ssh_cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
             self.stations[station_key]['last_update_time'] = time.time() + 15.0 
         except Exception as e:
             self.log(f"!!!!! SSH Restart Failed: {e} !!!!!")
@@ -548,5 +544,10 @@ def admin_panel():
 
 if __name__ == '__main__':
     master_node = MasterSystem()
+<<<<<<< Updated upstream
     print(">>> Starting Integrated Flask Server on Port 5000... <<<")
     app.run(host='0.0.0.0', port=5000, debug=False, use_reloader=False)
+=======
+    print("----- Starting Server... -----")
+    app.run(host='0.0.0.0', port=5000, debug=False, use_reloader=False)
+>>>>>>> Stashed changes
