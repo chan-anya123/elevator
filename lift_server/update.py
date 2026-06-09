@@ -2,9 +2,11 @@ import os
 import zipfile
 import time
 import platform
+import sys
+import shutil
 
 LOCAL_VERSION_FILE = "version.txt"
-PATCH_FILE = "patch.zip"  # ไฟล์อัปเดตที่คุณก๊อปปี้มาวางเอง
+PATCH_FILE = "patch.zip"
 
 def get_local_version():
     if os.path.exists(LOCAL_VERSION_FILE):
@@ -14,66 +16,72 @@ def get_local_version():
 
 def apply_patch():
     if not os.path.exists(PATCH_FILE):
-        print(f"[!] ไม่พบไฟล์อัปเดต '{PATCH_FILE}' ในโฟลเดอร์")
-        print(f"    วิธีใช้งาน: ก๊อปปี้ไฟล์ {PATCH_FILE} มาวางในโฟลเดอร์นี้แล้วรันโปรแกรมอีกครั้ง")
+        print(f"[!] ไม่พบไฟล์อัปเดต '{PATCH_FILE}'")
         return False
 
-    print(f"[*] พบไฟล์อัปเดต {PATCH_FILE}. กำลังเริ่มกระบวนการอัปเดต...")
+    print(f"[*] พบไฟล์อัปเดต {PATCH_FILE}. กำลังเริ่มการติดตั้งแบบฉลาด...")
     
-    # --- 1. ปิดโปรแกรมหลักก่อน (เพื่อไม่ให้ไฟล์โดน Lock) ---
-    print("[*] กำลังปิด Lift Server...")
+    # --- 1. ปิดโปรแกรมหลัก ---
     if platform.system() == "Windows":
         os.system("taskkill /f /im lift_single_ui.exe >nul 2>&1")
     else:
         os.system("pkill -f lift_single_ui.py >/dev/null 2>&1")
-        
-    time.sleep(2) # รอให้ระบบคืนค่าไฟล์
+    time.sleep(2)
 
-    # --- 2. แตกไฟล์อัปเดต ---
+    # --- 2. แตกไฟล์แบบลบชื่อโฟลเดอร์ชั้นแรก (Flatten) ---
     try:
-        print("[*] กำลังแตกไฟล์และติดตั้ง...")
         with zipfile.ZipFile(PATCH_FILE, 'r') as zip_ref:
-            # ดึงเวอร์ชันใหม่จากใน Zip (ถ้ามี)
             new_version = "Unknown"
-            if "version.txt" in zip_ref.namelist():
-                with zip_ref.open("version.txt") as f:
-                    new_version = f.read().decode('utf-8').strip()
-
+            
             for file_info in zip_ref.infolist():
-                # ป้องกันการเขียนทับไฟล์ตั้งค่า
-                if file_info.filename in ["lift_config.json", "config.json"]:
-                    print(f"[!] ข้ามการเขียนทับไฟล์: {file_info.filename} (เพื่อรักษาการตั้งค่าเดิม)")
+                # ข้ามโฟลเดอร์เปล่า
+                if file_info.is_dir(): continue
+                
+                # ตัดชื่อโฟลเดอร์ชั้นแรกออก (ถ้ามี) เช่น "patch/version.txt" -> "version.txt"
+                filename = os.path.basename(file_info.filename)
+                
+                # เช็คไฟล์เวอร์ชันเพื่ออัปเดตสถานะ
+                if filename == "version.txt":
+                    with zip_ref.open(file_info) as f:
+                        new_version = f.read().decode('utf-8').strip()
+
+                # ป้องกันไฟล์สำคัญ
+                if filename in ["lift_config.json", "config.json"]:
+                    print(f"[!] ข้าม: {filename}")
                     continue
-                zip_ref.extract(file_info, ".")
+
+                # แตกไฟล์ออกมาที่โฟลเดอร์หลักโดยตรง
+                source = zip_ref.open(file_info)
+                target_path = os.path.join(".", filename)
+                with source, open(target_path, "wb") as target:
+                    shutil.copyfileobj(source, target)
+                print(f"[+] ติดตั้ง: {filename}")
         
-        # --- 3. อัปเดตไฟล์เวอร์ชันในเครื่อง ---
         if new_version != "Unknown":
             with open(LOCAL_VERSION_FILE, "w") as f:
                 f.write(new_version)
-            print(f"[🎉] อัปเดตเป็นเวอร์ชัน v{new_version} สำเร็จ!")
-        else:
-            print(f"[🎉] ติดตั้ง Patch สำเร็จ!")
-
-        # --- 4. ลบไฟล์ Zip ทิ้งหลังทำเสร็จ ---
+            print(f"[🎉] อัปเดตเป็น v{new_version} สำเร็จ!")
+        
         os.remove(PATCH_FILE)
         
     except Exception as e:
-        print(f"\n[⚠️] เกิดข้อผิดพลาดระหว่างการอัปเดต: {e}")
+        print(f"\n[⚠️] ข้อผิดพลาด: {e}")
         return False
-
     return True
 
 if __name__ == "__main__":
-    print("=== Lift System Manual Updater ===")
+    print("=== Smart Manual Updater ===")
     current = get_local_version()
-    print(f"[*] เวอร์ชันปัจจุบัน: v{current}")
+    print(f"[*] ปัจจุบัน: v{current}")
     
     if apply_patch():
-        print("\n[OK] การอัปเดตเสร็จสมบูรณ์")
-        if platform.system() == "Windows":
-            print("[*] คุณสามารถเปิด 'lift_single_ui.exe' เพื่อใช้งานเวอร์ชันใหม่ได้ทันที")
-        else:
-            print("[*] คุณสามารถรัน 'python3 lift_single_ui.py' ได้ทันที")
-    
-    print("\n===============================")
-    input("\nกด Enter เพื่อออกจากโปรแกรม...")
+        print("\n[OK] อัปเดตเสร็จสิ้น")
+        print("===============================")
+        if sys.stdin and sys.stdin.isatty():
+            try:
+                print("\n[ℹ️] ระบบจะปิดอัตโนมัติใน 5 วินาที...")
+                import select
+                select.select([sys.stdin], [], [], 5)
+            except: pass
+    else:
+        time.sleep(2)
