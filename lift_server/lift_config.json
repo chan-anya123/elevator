@@ -1,8 +1,9 @@
 {
+    "central_server_ip": "127.0.0.1:8000",
     "robot_ip": "192.168.10.5",
     "settings": {
-        "brightness": 10,
-        "max_timeout": 50,
+        "brightness": 100,
+        "max_timeout": 60,
         "robot_dir_registers": [
             8,
             18,
@@ -22,7 +23,7 @@
             "comment": "Lift A2"
         },
         {
-            "ip": "192.168.20.42",
+            "ip": "192.168.20.46",
             "reg_offset": 0,
             "comment": "Lift A3"
         },
