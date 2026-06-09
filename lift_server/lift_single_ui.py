@@ -544,10 +544,5 @@ def admin_panel():
 
 if __name__ == '__main__':
     master_node = MasterSystem()
-<<<<<<< Updated upstream
-    print(">>> Starting Integrated Flask Server on Port 5000... <<<")
-    app.run(host='0.0.0.0', port=5000, debug=False, use_reloader=False)
-=======
     print("----- Starting Server... -----")
     app.run(host='0.0.0.0', port=5000, debug=False, use_reloader=False)
->>>>>>> Stashed changes
