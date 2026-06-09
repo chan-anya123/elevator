@@ -1,82 +1,79 @@
 import os
-import requests
 import zipfile
-import json
 import time
+import platform
 
 LOCAL_VERSION_FILE = "version.txt"
-CONFIG_FILE = "lift_config.json"
+PATCH_FILE = "patch.zip"  # ไฟล์อัปเดตที่คุณก๊อปปี้มาวางเอง
 
 def get_local_version():
     if os.path.exists(LOCAL_VERSION_FILE):
         with open(LOCAL_VERSION_FILE, "r") as f:
             return f.read().strip()
-    return "1.0.0"  # เวอร์ชันตั้งต้น
+    return "1.0.0"
 
-def get_server_urls():
-    central_ip = "127.0.0.1" 
-    
-    if os.path.exists(CONFIG_FILE):
-        try:
-            with open(CONFIG_FILE, "r", encoding="utf-8") as f:
-                config = json.load(f)
-                central_ip = config.get("central_server_ip", "127.0.0.1")
-        except Exception as e:
-            print(f"Error reading config: {e}")
-            
-    version_url = f"http://{central_ip}/lift_version.txt"
-    patch_url = f"http://{central_ip}/patch.zip"
-    
-    return version_url, patch_url
+def apply_patch():
+    if not os.path.exists(PATCH_FILE):
+        print(f"[!] ไม่พบไฟล์อัปเดต '{PATCH_FILE}' ในโฟลเดอร์")
+        print(f"    วิธีใช้งาน: ก๊อปปี้ไฟล์ {PATCH_FILE} มาวางในโฟลเดอร์นี้แล้วรันโปรแกรมอีกครั้ง")
+        return False
 
-def check_and_apply_update():
-    current_version = get_local_version()
-    VERSION_URL, PATCH_URL = get_server_urls()
+    print(f"[*] พบไฟล์อัปเดต {PATCH_FILE}. กำลังเริ่มกระบวนการอัปเดต...")
     
-    print(f"[*] Local version is v{current_version}")
-    print(f"[*] Checking updates from: {VERSION_URL}")
-    
-    try:
-        response = requests.get(VERSION_URL, timeout=4)
-        latest_version = response.text.strip()
+    # --- 1. ปิดโปรแกรมหลักก่อน (เพื่อไม่ให้ไฟล์โดน Lock) ---
+    print("[*] กำลังปิด Lift Server...")
+    if platform.system() == "Windows":
+        os.system("taskkill /f /im lift_single_ui.exe >nul 2>&1")
+    else:
+        os.system("pkill -f lift_single_ui.py >/dev/null 2>&1")
         
-        if latest_version != current_version:
-            print(f"[+] New version detected: v{latest_version}. Downloading patch...")
-            
-            # --- ป้องกันไฟล์โดนล็อค: สั่งปิดโปรแกรมหลักก่อนอัปเดต ---
-            print("[*] Closing current Lift Server if it's running...")
-            os.system("taskkill /f /im lift_single_ui.exe >nul 2>&1")
-            time.sleep(1) # หน่วงเวลา 1 วินาทีให้ระบบคืนค่าไฟล์
-            # --------------------------------------------------
-            
-            patch_resp = requests.get(PATCH_URL, timeout=15)
-            zip_name = "patch_temp.zip"
-            with open(zip_name, "wb") as f:
-                f.write(patch_resp.content)
-            
-            print("[*] Extracting files...")
-            with zipfile.ZipFile(zip_name, 'r') as zip_ref:
-                for file_info in zip_ref.infolist():
-                    # ข้ามไฟล์ตั้งค่า เพื่อไม่ให้ไอพีหน้างานโดนเขียนทับ
-                    if file_info.filename in ["lift_config.json", "config.json"]:
-                        print(f"[!] Skipped: {file_info.filename} to protect local settings.")
-                        continue
-                    zip_ref.extract(file_info, ".")
-            
+    time.sleep(2) # รอให้ระบบคืนค่าไฟล์
+
+    # --- 2. แตกไฟล์อัปเดต ---
+    try:
+        print("[*] กำลังแตกไฟล์และติดตั้ง...")
+        with zipfile.ZipFile(PATCH_FILE, 'r') as zip_ref:
+            # ดึงเวอร์ชันใหม่จากใน Zip (ถ้ามี)
+            new_version = "Unknown"
+            if "version.txt" in zip_ref.namelist():
+                with zip_ref.open("version.txt") as f:
+                    new_version = f.read().decode('utf-8').strip()
+
+            for file_info in zip_ref.infolist():
+                # ป้องกันการเขียนทับไฟล์ตั้งค่า
+                if file_info.filename in ["lift_config.json", "config.json"]:
+                    print(f"[!] ข้ามการเขียนทับไฟล์: {file_info.filename} (เพื่อรักษาการตั้งค่าเดิม)")
+                    continue
+                zip_ref.extract(file_info, ".")
+        
+        # --- 3. อัปเดตไฟล์เวอร์ชันในเครื่อง ---
+        if new_version != "Unknown":
             with open(LOCAL_VERSION_FILE, "w") as f:
-                f.write(latest_version)
-                
-            os.remove(zip_name)
-            print(f"\n[🎉] Successfully updated to v{latest_version}!")
-            print("[*] You can now open 'lift_single_ui.exe' to run the new version.")
+                f.write(new_version)
+            print(f"[🎉] อัปเดตเป็นเวอร์ชัน v{new_version} สำเร็จ!")
         else:
-            print("\n[*] Your system is up-to-date.")
-            
+            print(f"[🎉] ติดตั้ง Patch สำเร็จ!")
+
+        # --- 4. ลบไฟล์ Zip ทิ้งหลังทำเสร็จ ---
+        os.remove(PATCH_FILE)
+        
     except Exception as e:
-        print(f"\n[⚠️] Update check failed or server offline: {e}")
+        print(f"\n[⚠️] เกิดข้อผิดพลาดระหว่างการอัปเดต: {e}")
+        return False
+
+    return True
 
 if __name__ == "__main__":
-    print("=== Lift System Updater ===")
-    check_and_apply_update()
-    print("\n===========================")
-    os.system("pause") # หยุดหน้าจอไม่ให้ปิดเอง เพื่อให้คนหน้างานอ่านสถานะ
+    print("=== Lift System Manual Updater ===")
+    current = get_local_version()
+    print(f"[*] เวอร์ชันปัจจุบัน: v{current}")
+    
+    if apply_patch():
+        print("\n[OK] การอัปเดตเสร็จสมบูรณ์")
+        if platform.system() == "Windows":
+            print("[*] คุณสามารถเปิด 'lift_single_ui.exe' เพื่อใช้งานเวอร์ชันใหม่ได้ทันที")
+        else:
+            print("[*] คุณสามารถรัน 'python3 lift_single_ui.py' ได้ทันที")
+    
+    print("\n===============================")
+    input("\nกด Enter เพื่อออกจากโปรแกรม...")
