@@ -14,6 +14,11 @@ from concurrent.futures import ThreadPoolExecutor
 
 CONFIG_FILE = 'lift_config.json'
 VERSION = "1.0.0"
+if os.path.exists("version.txt"):
+    try:
+        with open("version.txt", "r") as f:
+            VERSION = f.read().strip()
+    except: pass
 
 DEFAULT_CONFIG = {
     "robot_ip": "192.168.10.5",
@@ -549,7 +554,10 @@ def admin_panel():
     </head>
     <body>
         <div class="container">
-            <h2>Lift Master System Management</h2>
+            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #3498db; margin-bottom: 20px; padding-bottom: 10px;">
+                <h2 style="margin: 0; border: none;">Lift Master Management</h2>
+                <span style="background: #34495e; color: white; padding: 5px 12px; border-radius: 20px; font-size: 14px; font-weight: bold;">v{{ version }}</span>
+            </div>
 
             <div class="section">
                 <h3>📦 System Update</h3>
@@ -613,7 +621,8 @@ def admin_panel():
     return render_template_string(
         html_template, 
         json_string=json.dumps(current_data, indent=4, ensure_ascii=False), 
-        msg=msg
+        msg=msg,
+        version=VERSION
     )
 
 if __name__ == '__main__':
