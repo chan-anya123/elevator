@@ -3,7 +3,6 @@ import requests
 import zipfile
 import json
 import time
-import platform 
 
 LOCAL_VERSION_FILE = "version.txt"
 CONFIG_FILE = "lift_config.json"
@@ -12,7 +11,7 @@ def get_local_version():
     if os.path.exists(LOCAL_VERSION_FILE):
         with open(LOCAL_VERSION_FILE, "r") as f:
             return f.read().strip()
-    return "1.0.0"
+    return "1.0.0"  # เวอร์ชันตั้งต้น
 
 def get_server_urls():
     central_ip = "127.0.0.1" 
@@ -44,17 +43,11 @@ def check_and_apply_update():
         if latest_version != current_version:
             print(f"[+] New version detected: v{latest_version}. Downloading patch...")
             
-            # --- [ปรับปรุงจุดนี้: ป้องกันไฟล์โดนล็อคแบบรองรับสองแพลตฟอร์ม] ---
+            # --- ป้องกันไฟล์โดนล็อค: สั่งปิดโปรแกรมหลักก่อนอัปเดต ---
             print("[*] Closing current Lift Server if it's running...")
-            if platform.system() == "Windows":
-                # สำหรับ Windows: สั่งปิดไฟล์ .exe ตัวหลัก
-                os.system("taskkill /f /im lift_single_ui.exe >nul 2>&1")
-            else:
-                # สำหรับ Ubuntu/Linux: สั่งสั่งปิดโปรเซสสคริปต์หลัก Python ทันที
-                os.system("pkill -f lift_single_ui.py >/dev/null 2>&1")
-                
+            os.system("taskkill /f /im lift_single_ui.exe >nul 2>&1")
             time.sleep(1) # หน่วงเวลา 1 วินาทีให้ระบบคืนค่าไฟล์
-            # ------------------------------------------------------------------
+            # --------------------------------------------------
             
             patch_resp = requests.get(PATCH_URL, timeout=15)
             zip_name = "patch_temp.zip"
@@ -64,6 +57,7 @@ def check_and_apply_update():
             print("[*] Extracting files...")
             with zipfile.ZipFile(zip_name, 'r') as zip_ref:
                 for file_info in zip_ref.infolist():
+                    # ข้ามไฟล์ตั้งค่า เพื่อไม่ให้ไอพีหน้างานโดนเขียนทับ
                     if file_info.filename in ["lift_config.json", "config.json"]:
                         print(f"[!] Skipped: {file_info.filename} to protect local settings.")
                         continue
@@ -74,11 +68,7 @@ def check_and_apply_update():
                 
             os.remove(zip_name)
             print(f"\n[🎉] Successfully updated to v{latest_version}!")
-            
-            if platform.system() == "Windows":
-                print("[*] You can now open 'lift_single_ui.exe' to run the new version.")
-            else:
-                print("[*] You can now run 'python3 lift_single_ui.py' to start the new version.")
+            print("[*] You can now open 'lift_single_ui.exe' to run the new version.")
         else:
             print("\n[*] Your system is up-to-date.")
             
@@ -89,6 +79,4 @@ if __name__ == "__main__":
     print("=== Lift System Updater ===")
     check_and_apply_update()
     print("\n===========================")
-    
-    # --- [ปรับปรุงจุดนี้: ใช้ฟังก์ชันภายในของ Python เพื่อค้างหน้าจอข้ามแพลตฟอร์ม] ---
-    input("\nPress Enter to exit...")
+    os.system("pause") # หยุดหน้าจอไม่ให้ปิดเอง เพื่อให้คนหน้างานอ่านสถานะ
