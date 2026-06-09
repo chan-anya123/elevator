@@ -538,9 +538,3 @@ arduino_uno_q/
 ├── main.py
 └── README.md
 ```
-
----
-
-# License
-
-MIT License
