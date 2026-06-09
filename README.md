@@ -160,17 +160,21 @@ The Master Server acts as a Modbus Client/Server bridge to sync data with the Ro
 
 ### 🤖 Robot Direction Handshake Logic
 
-The Master Server employs a specific handshake logic to ensure the robot has safely entered/exited the lift before completing a mission. This logic is governed by the `robot_dir_registers` defined in the configuration.
+The Master Server employs a specific handshake logic to ensure the robot has safely entered/exited the lift before completing a mission. This system supports **Multi-Robot Synchronization** by monitoring a pool of registers.
 
 **Handshake Steps:**
-1. **Waiting for Activity**: Once the lift arrives at the target floor and doors open, the Master Server monitors all registers in the `robot_dir_registers` list.
-2. **Detection**: The robot must write a value of **1** or **2** to its assigned direction register. The Master Server "locks on" to this register once activity is detected.
-3. **Pulsing State**: While the register holds a non-zero value, the Master Server maintains the mission active (sending pulses to keep doors open/active).
-4. **Completion**: The mission is only marked as **SUCCESS** after:
-   - At least one configured register was detected as active (1 or 2).
-   - **AND** all registers that were active have returned to **0**.
+1. **Waiting for Activity**: Once the lift arrives at the target floor and doors open, the Master Server monitors all registers in the `robot_dir_registers` list (e.g., [8, 18, 28, 38]).
+2. **Detection & Tracking**: 
+   - When a robot writes **1** (Entering) or **2** (Exiting) to any register in the list, the Master Server begins "tracking" that specific register.
+   - Multiple robots can be tracked simultaneously if they write to different registers in the list.
+3. **Pulsing State**: While at least one robot is active (value 1 or 2) or being tracked, the Master Server maintains the mission active, periodically sending pulses to the lift station to keep doors open.
+4. **Completion (The "All-Clear")**: The mission is only marked as **SUCCESS** after:
+   - At least one robot was detected and tracked.
+   - **AND** all tracked registers have returned to **0** (Clear).
 
-*Note: If the robot fails to signal (never writes 1 or 2) within the `max_timeout` period, the mission will end with an **ERROR** state.*
+*Note:*
+- If no activity (1 or 2) is detected across any configured register within `max_timeout`, the mission ends with an **ERROR**.
+- This logic prevents the lift from moving if one robot has finished but another is still entering/exiting.
 
 ### 3. Modbus TCP (Lift Station - Port 1502)
 
