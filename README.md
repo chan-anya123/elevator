@@ -139,7 +139,7 @@ The system provides multiple interfaces for integration with Robots, PLCs, and e
 
 ### 2. Modbus TCP (Robot Integration - Port 502)
 
-The Master Server acts as a Modbus Client/Server bridge to sync data with the Robot PLC.
+The Master Server acts as a Modbus Client/Server bridge to sync data with the Robot PLC. (lift_A start reg = 0, lift_B start reg = 10)
 
 | Address | Type | Name | Description |
 |---|---|---|---|
