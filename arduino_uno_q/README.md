@@ -375,14 +375,20 @@ When the door state changes:
 
 # Installation
 
-Install required packages:
+Install required packages using the unified `requirements.txt` from the project root:
 
 ```bash
 sudo apt update
+sudo apt install python3-pip -y
 
-sudo apt install python3-msgpack
-sudo apt install python3-flask python3-pip -y
+# Install all dependencies
+pip3 install -r ../requirements.txt --break-system-packages
+```
 
+Alternatively, install individual packages:
+
+```bash
+sudo apt install python3-msgpack python3-flask python3-flask-cors -y
 sudo pip3 install pyModbusTCP --break-system-packages
 ```
 
