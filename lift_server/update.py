@@ -4,6 +4,7 @@ import time
 import platform
 import sys
 import shutil
+import subprocess
 
 LOCAL_VERSION_FILE = "version.txt"
 PATCH_FILE = "patch.zip"
@@ -14,6 +15,22 @@ def get_local_version():
             return f.read().strip()
     return "1.0.0"
 
+def restart_server():
+    print("[*] กำลังรีสตาร์ท Lift Server...")
+    try:
+        if platform.system() == "Windows":
+            if os.path.exists("lift_single_ui.exe"):
+                subprocess.Popen(["lift_single_ui.exe"], creationflags=0x00000008) # DETACHED_PROCESS
+            else:
+                # Use sys.executable for python if running as script
+                subprocess.Popen([sys.executable, "lift_single_ui.py"], creationflags=0x00000008)
+        else:
+            # สำหรับ Linux (Ubuntu) สั่งรันใน Session ใหม่
+            subprocess.Popen(["python3", "lift_single_ui.py"], start_new_session=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        print("[✅] รีสตาร์ทสำเร็จ!")
+    except Exception as e:
+        print(f"[⚠️] รีสตาร์ทล้มเหลว: {e}")
+
 def apply_patch():
     if not os.path.exists(PATCH_FILE):
         print(f"[!] ไม่พบไฟล์อัปเดต '{PATCH_FILE}'")
@@ -22,6 +39,7 @@ def apply_patch():
     print(f"[*] พบไฟล์อัปเดต {PATCH_FILE}. กำลังเริ่มการติดตั้งแบบฉลาด...")
     
     # --- 1. ปิดโปรแกรมหลัก ---
+    print("[*] กำลังปิด Lift Server...")
     if platform.system() == "Windows":
         os.system("taskkill /f /im lift_single_ui.exe >nul 2>&1")
     else:
@@ -76,12 +94,21 @@ if __name__ == "__main__":
     
     if apply_patch():
         print("\n[OK] อัปเดตเสร็จสิ้น")
+        restart_server()
         print("===============================")
+        
+        # ตรวจสอบว่ารันแบบมีหน้าจอ (Interactive) หรือไม่
         if sys.stdin and sys.stdin.isatty():
             try:
                 print("\n[ℹ️] ระบบจะปิดอัตโนมัติใน 5 วินาที...")
                 import select
                 select.select([sys.stdin], [], [], 5)
-            except: pass
+            except:
+                pass
+        else:
+            print("[*] อัปเดตเสร็จสิ้น (Non-interactive mode)")
+            time.sleep(2)
     else:
         time.sleep(2)
+
+    print("[*] ปิดโปรแกรมอัปเดต")
