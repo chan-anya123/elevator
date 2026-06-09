@@ -394,6 +394,21 @@ sudo pip3 install pyModbusTCP --break-system-packages
 
 ---
 
+# Updating MCU Firmware
+
+To update the Arduino (MCU layer) firmware directly from the MPU (Linux layer), use the provided `update_mcu.sh` script. This script automatically handles stopping the lift service, compiling the `.ino` file using `arduino-cli`, flashing the board via USB/Serial, and restarting the service.
+
+**Prerequisites:**
+You must have `arduino-cli` installed and the appropriate core (`arduino:renesas_uno`) configured on the MPU.
+
+**Usage:**
+```bash
+cd arduino_uno_q
+sudo ./update_mcu.sh
+```
+
+---
+
 # Quick Start
 
 Start the controller service:
