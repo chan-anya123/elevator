@@ -111,7 +111,7 @@ class MasterSystem:
 
     def rediscover_loop(self):
         while True:
-            time.sleep(300)  # auto-scan every 10 minutes
+            time.sleep(300)  # auto-scan every 5 minutes
             self.log("Auto-Scanning for new or reconnected lift stations...")
             self.discover_stations()
 
