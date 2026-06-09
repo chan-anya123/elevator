@@ -468,37 +468,58 @@ def get_config():
             return jsonify(json.load(f))
     return jsonify(DEFAULT_CONFIG)
 
+@app.route('/api/upload_patch', methods=['POST'])
+def upload_patch():
+    if 'file' not in request.files:
+        return jsonify({"status": "error", "message": "No file part"}), 400
+    file = request.files['file']
+    if file.filename == '':
+        return jsonify({"status": "error", "message": "No selected file"}), 400
+
+    if file and file.filename.endswith('.zip'):
+        # บันทึกไฟล์เป็น patch.zip เพื่อให้ update.py ตรวจเจอ
+        save_path = os.path.join(os.getcwd(), 'patch.zip')
+        file.save(save_path)
+
+        # ฟังก์ชันสั่งรันตัวอัปเดตหลังจากส่ง Response กลับไปแล้ว
+        def trigger_update():
+            time.sleep(2)
+            if platform.system() == "Windows":
+                if os.path.exists("update.exe"):
+                    subprocess.Popen(["update.exe"])
+                else:
+                    subprocess.Popen(["python", "update.py"])
+            else:
+                subprocess.Popen(["python3", "update.py"])
+
+        threading.Thread(target=trigger_update).start()
+
+        return jsonify({
+            "status": "success", 
+            "message": "Upload successful! The system will restart and update in 2 seconds. Please refresh the page later."
+        }), 200
+
+    return jsonify({"status": "error", "message": "Invalid file type. Please upload a .zip file."}), 400
+
 @app.route('/admin', methods=['GET', 'POST'])
 def admin_panel():
     global master_node
     msg = ""
-    if request.method == 'POST':
+    # ... (ส่วนเดิมของ POST logic) ...
+    if request.method == 'POST' and 'json_data' in request.form:
         try:
-            if request.is_json:
-                parsed_json = request.get_json()
-            else:
-                raw_json = request.form.get('json_data')
-                parsed_json = json.loads(raw_json)
-            
+            raw_json = request.form.get('json_data')
+            parsed_json = json.loads(raw_json)
             if "robot_ip" in parsed_json and "lifts" in parsed_json and "settings" in parsed_json:
                 with open(CONFIG_FILE, 'w', encoding='utf-8') as f:
                     json.dump(parsed_json, f, indent=4, ensure_ascii=False)
-                
                 if master_node:
                     master_node.load_config(CONFIG_FILE)
-                
-                if request.is_json:
-                    return jsonify({"status": "success", "message": "Save success & Hot-Reload applied!"}), 200
-                
                 msg = '<div style="color: #2ecc71; font-weight: bold; margin-bottom: 15px;">💾 Save success & Hot-Reload applied!</div>'
             else:
-                if request.is_json:
-                    return jsonify({"status": "error", "message": "missing required keys"}), 400
-                msg = '<div style="color: #e74c3c; font-weight: bold; margin-bottom: 15px;">❌ Save failed: missing required keys in JSON data</div>'
+                msg = '<div style="color: #e74c3c; font-weight: bold; margin-bottom: 15px;">❌ Save failed: missing keys</div>'
         except Exception as e:
-            if request.is_json:
-                return jsonify({"status": "error", "message": str(e)}), 400
-            msg = f'<div style="color: #e74c3c; font-weight: bold; margin-bottom: 15px;">❌ JSON format error: {e}</div>'
+            msg = f'<div style="color: #e74c3c; font-weight: bold; margin-bottom: 15px;">❌ JSON error: {e}</div>'
 
     current_data = DEFAULT_CONFIG
     if os.path.exists(CONFIG_FILE):
@@ -517,22 +538,75 @@ def admin_panel():
             body { font-family: 'Segoe UI', sans-serif; background-color: #f5f6fa; margin: 0; padding: 20px; }
             .container { max-width: 900px; background: white; margin: 0 auto; padding: 30px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); border-radius: 8px; }
             h2 { color: #2c3e50; border-bottom: 2px solid #3498db; padding-bottom: 10px; margin-top: 0; }
-            textarea { width: 100%; height: 500px; font-family: 'Courier New', monospace; font-size: 14px; padding: 15px; border-radius: 4px; box-sizing: border-box; background-color: #1e272e; color: #f5f6fa; resize: vertical; }
+            .section { margin-bottom: 30px; padding: 20px; border: 1px solid #eee; border-radius: 8px; }
+            textarea { width: 100%; height: 400px; font-family: 'Courier New', monospace; font-size: 14px; padding: 15px; border-radius: 4px; box-sizing: border-box; background-color: #1e272e; color: #f5f6fa; resize: vertical; }
             .btn { background-color: #3498db; color: white; border: none; padding: 12px 25px; font-size: 16px; border-radius: 4px; cursor: pointer; font-weight: bold; margin-top: 15px; }
-            .btn:hover { background-color: #2980b9; }
+            .btn-update { background-color: #e67e22; }
+            .btn:hover { opacity: 0.8; }
             p { color: #7f8c8d; font-size: 14px; }
+            #upload-status { margin-top: 10px; font-weight: bold; }
         </style>
     </head>
     <body>
         <div class="container">
-            <h2>Lift Master System Config </h2>
-            <p>update configuration for all lifts</p>
-            {{ msg|safe }}
-            <form method="POST">
-                <textarea name="json_data">{{ json_string }}</textarea>
-                <input type="submit" class="btn" value="save and update">
-            </form>
+            <h2>Lift Master System Management</h2>
+
+            <div class="section">
+                <h3>📦 System Update</h3>
+                <p>Upload <b>patch.zip</b> to update the system (Code and Executables).</p>
+                <input type="file" id="patch-file" accept=".zip">
+                <button class="btn btn-update" onclick="uploadPatch()">Upload and Update</button>
+                <div id="upload-status"></div>
+            </div>
+
+            <div class="section">
+                <h3>⚙️ Configuration</h3>
+                <p>Update system-wide configuration (Hot-Reload supported)</p>
+                {{ msg|safe }}
+                <form method="POST">
+                    <textarea name="json_data">{{ json_string }}</textarea>
+                    <input type="submit" class="btn" value="Save and Update Config">
+                </form>
+            </div>
         </div>
+
+        <script>
+            function uploadPatch() {
+                const fileInput = document.getElementById('patch-file');
+                const status = document.getElementById('upload-status');
+
+                if (fileInput.files.length === 0) {
+                    alert('Please select a patch.zip file first.');
+                    return;
+                }
+
+                const formData = new FormData();
+                formData.append('file', fileInput.files[0]);
+
+                status.innerHTML = "⏳ Uploading... please wait.";
+                status.style.color = "#3498db";
+
+                fetch('/api/upload_patch', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === "success") {
+                        status.innerHTML = "✅ " + data.message;
+                        status.style.color = "#2ecc71";
+                        setTimeout(() => { location.reload(); }, 5000);
+                    } else {
+                        status.innerHTML = "❌ Error: " + data.message;
+                        status.style.color = "#e74c3c";
+                    }
+                })
+                .catch(error => {
+                    status.innerHTML = "❌ Upload failed: " + error;
+                    status.style.color = "#e74c3c";
+                });
+            }
+        </script>
     </body>
     </html>
     """
