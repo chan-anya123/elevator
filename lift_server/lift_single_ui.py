@@ -1,5 +1,6 @@
 import time
 import logging
+from logging.handlers import RotatingFileHandler
 import threading
 import requests
 from pyModbusTCP.client import ModbusClient
@@ -8,7 +9,7 @@ import json
 import subprocess
 import socket
 import os
-from flask import Flask, jsonify, request, render_template_string
+from flask import Flask, jsonify, request, render_template_string, send_file
 from datetime import datetime
 import platform
 from concurrent.futures import ThreadPoolExecutor
@@ -19,10 +20,13 @@ logging.basicConfig(
     format='[%(asctime)s] %(message)s',
     datefmt='%d/%m/%Y %H:%M:%S',
     handlers=[
-        # logging.FileHandler("lift_server.log", encoding='utf-8'), # Comment this line to stop saving to file
+        RotatingFileHandler("lift_server.log", maxBytes=5*1024*1024, backupCount=5, encoding='utf-8'), 
         logging.StreamHandler()                                   # This keeps logs visible in the terminal
     ]
 )
+
+# Hide "GET /status" logs (Werkzeug)
+logging.getLogger('werkzeug').setLevel(logging.ERROR)
 
 CONFIG_FILE = 'lift_config.json'
 VERSION = "1.0.0"
@@ -123,7 +127,7 @@ class MasterSystem:
 
     def rediscover_loop(self):
         while True:
-            time.sleep(300)  # auto-scan every 5 minutes
+            time.sleep(120)  # auto-scan every 2 minutes
             self.log("Auto-Scanning for new or reconnected lift stations...")
             self.discover_stations()
 
@@ -395,6 +399,8 @@ class MasterSystem:
                         self.write_modbus(station_key, COLOR_REG, LedColor.BLUE)
                         self.write_modbus(station_key, CMD_REG, action_cmd)
                         time.sleep(0.4)
+                        # self.write_modbus(station_key, CMD_REG, 0)
+                        # time.sleep(0.2)
                         self.write_modbus(station_key, CMD_REG, led_cmd)
                         mission_status = Sequence.ARRIVED
 
@@ -444,7 +450,7 @@ class MasterSystem:
                             break
                         else:
                             if door_val == 1:
-                                # self.log(f"Pulse doorOPEN")
+                                self.log(f"Pulse doorOPEN")
                                 self.write_modbus(station_key, COLOR_REG, LedColor.PINK)
                                 self.write_modbus(station_key, CMD_REG, 0)
                                 time.sleep(5)
@@ -512,14 +518,21 @@ def board_status():
         })
     return jsonify({"status": "master_starting"}), 503
 
-@app.route('/api/get_lift_config', methods=['GET'])
+@app.route('/get_lift_config', methods=['GET'])
 def get_config():
     if os.path.exists(CONFIG_FILE):
         with open(CONFIG_FILE, 'r', encoding='utf-8') as f:
             return jsonify(json.load(f))
     return jsonify(DEFAULT_CONFIG)
 
-@app.route('/api/upload_patch', methods=['POST'])
+@app.route('/download_log', methods=['GET'])
+def download_log():
+    log_file = "lift_server.log"
+    if os.path.exists(log_file):
+        return send_file(log_file, as_attachment=True)
+    return jsonify({"status": "error", "message": "Log file not found"}), 404
+
+@app.route('/upload_patch', methods=['POST'])
 def upload_patch():
     if 'file' not in request.files:
         return jsonify({"status": "error", "message": "No file part"}), 400
@@ -606,14 +619,6 @@ def admin_panel():
             </div>
 
             <div class="section">
-                <h3>📦 System Update</h3>
-                <p>Upload <b>patch.zip</b> to update the system (Code and Executables).</p>
-                <input type="file" id="patch-file" accept=".zip">
-                <button class="btn btn-update" onclick="uploadPatch()">Upload and Update</button>
-                <div id="upload-status"></div>
-            </div>
-
-            <div class="section">
                 <h3>⚙️ Configuration</h3>
                 <p>Update system-wide configuration (Hot-Reload supported)</p>
                 {{ msg|safe }}
@@ -621,6 +626,17 @@ def admin_panel():
                     <textarea name="json_data">{{ json_string }}</textarea>
                     <input type="submit" class="btn" value="Save and Update Config">
                 </form>
+            </div>
+
+            <div class="section">
+                <h3>📦 System Management</h3>
+                <p>Download the current system logs for troubleshooting.</p>
+                <button class="btn" style="background-color: #27ae60;" onclick="window.location.href='/download_log'">Download lift_server.log</button>
+                <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;">
+                <p>Upload <b>patch.zip</b> to update the system (Code and Executables).</p>
+                <input type="file" id="patch-file" accept=".zip">
+                <button class="btn btn-update" onclick="uploadPatch()">Upload and Update</button>
+                <div id="upload-status"></div>
             </div>
         </div>
 
@@ -640,7 +656,7 @@ def admin_panel():
                 status.innerHTML = "⏳ Uploading... please wait.";
                 status.style.color = "#3498db";
 
-                fetch('/api/upload_patch', {
+                fetch('/upload_patch', {
                     method: 'POST',
                     body: formData
                 })
