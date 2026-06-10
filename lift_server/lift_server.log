@@ -1,0 +1,37 @@
+[10/06/2026 08:46:47] ----- Load Local Config Successfully! -----
+[10/06/2026 08:46:47] Config Initialized -> Robot IP: 192.168.10.5, Total Stations: 8
+[10/06/2026 08:46:47] ----- Starting Server... -----
+[10/06/2026 08:46:48] [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5000
+ * Running on http://192.168.10.4:5000
+[10/06/2026 08:46:48] [33mPress CTRL+C to quit[0m
+[10/06/2026 08:46:50] 192.168.10.4 - - [10/Jun/2026 08:46:50] "GET /status HTTP/1.1" 200 -
+[10/06/2026 08:46:51] Ready: Floor 2A at 192.168.20.60
+[10/06/2026 08:46:52] 192.168.20.38 - - [10/Jun/2026 08:46:52] "GET /status HTTP/1.1" 200 -
+[10/06/2026 08:46:53] Master System Control Core Started.
+[10/06/2026 08:46:54] Human >> Lift A Door OPENED at Floor 2
+[10/06/2026 08:47:00] Human >> Lift A Door CLOSED at Floor 2
+[10/06/2026 08:47:23] MISSION START: A -> Floor 2
+[10/06/2026 08:48:33] Human >> Lift A Door OPENED at Floor 2
+[10/06/2026 08:48:33] ----- A Arrived at Floor 2 -----
+[10/06/2026 08:48:34] Pulse doorOPEN
+[10/06/2026 08:48:39] Pulse doorOPEN
+[10/06/2026 08:48:45] Pulse doorOPEN
+[10/06/2026 08:48:50] Pulse doorOPEN
+[10/06/2026 08:48:56] Pulse doorOPEN
+[10/06/2026 08:49:01] Pulse doorOPEN
+[10/06/2026 08:49:07] Pulse doorOPEN
+[10/06/2026 08:49:12] Pulse doorOPEN
+[10/06/2026 08:49:18] Pulse doorOPEN
+[10/06/2026 08:49:23] Pulse doorOPEN
+[10/06/2026 08:49:29] Pulse doorOPEN
+[10/06/2026 08:49:34] Pulse doorOPEN
+[10/06/2026 08:49:39] ----- MISSION END: 2A -----
+[10/06/2026 08:49:49] Human >> Lift A Door CLOSED at Floor 2
+[10/06/2026 08:50:13] Human >> Lift A Door OPENED at Floor 2
+[10/06/2026 08:50:17] Human >> Lift A Door CLOSED at Floor 2
+[10/06/2026 08:50:21] Human >> Lift A Door OPENED at Floor 2
+[10/06/2026 08:50:24] Human >> Lift A Door CLOSED at Floor 2
+[10/06/2026 08:50:32] Human >> Lift A Door OPENED at Floor 2
+[10/06/2026 08:50:37] Human >> Lift A Door CLOSED at Floor 2
