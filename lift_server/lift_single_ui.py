@@ -1,4 +1,5 @@
 import time
+import logging
 import threading
 import requests
 from pyModbusTCP.client import ModbusClient
@@ -11,6 +12,17 @@ from flask import Flask, jsonify, request, render_template_string
 from datetime import datetime
 import platform
 from concurrent.futures import ThreadPoolExecutor
+
+# --- [Logging Configuration] ---
+logging.basicConfig(
+    level=logging.INFO,
+    format='[%(asctime)s] %(message)s',
+    datefmt='%d/%m/%Y %H:%M:%S',
+    handlers=[
+        logging.FileHandler("lift_server.log", encoding='utf-8'),
+        logging.StreamHandler()
+    ]
+)
 
 CONFIG_FILE = 'lift_config.json'
 VERSION = "1.0.0"
@@ -83,9 +95,9 @@ class MasterSystem:
             try:
                 with open(path, 'r', encoding='utf-8') as f:
                     config = json.load(f)
-                    print("----- Load Local Config Successfully! -----")
+                    logging.info("----- Load Local Config Successfully! -----")
             except Exception as e:
-                print(f"!!!!! Local Config File Error: {e} -> Using Default !!!!!")
+                logging.error(f"!!!!! Local Config File Error: {e} -> Using Default !!!!!")
         else:
             try:
                 with open(path, 'w', encoding='utf-8') as f:
@@ -98,7 +110,7 @@ class MasterSystem:
         self.bright = config['settings']['brightness']
         self.max_timeout = config['settings']['max_timeout']
         self.robot_dir_regs = config['settings'].get('robot_dir_registers', [8, 18, 28, 38])
-        print(f"Config Initialized -> Robot IP: {self.robot_ip}, Total Stations: {len(self.config_lifts)}")
+        logging.info(f"Config Initialized -> Robot IP: {self.robot_ip}, Total Stations: {len(self.config_lifts)}")
 
     def init_and_discover(self):
         self.discover_stations()
@@ -128,7 +140,7 @@ class MasterSystem:
             s.close()
 
     def log(self, msg):
-        print(f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] {msg}")
+        logging.info(msg)
 
     def read_modbus(self, station_key, reg, count=1):
         if station_key not in self.stations: return None
@@ -222,6 +234,7 @@ class MasterSystem:
             except: return None
 
     def main_control_loop(self):
+        last_log_time = 0
         while True:
             try:
                 read_count = len(self.robot_live_data)
@@ -255,6 +268,17 @@ class MasterSystem:
                     f_robot  = robot_data[addr.get("floor", 0)]
 
                     if val_door == 1: 
+                        if self.lifts[l_type]["door"] != "OPEN" or self.lifts[l_type]["floor"] != current_station_floor:
+                            # Identify Actor
+                            actor = "Human"
+                            with self.lock:
+                                for reg in self.robot_dir_regs:
+                                    if reg < len(self.robot_live_data) and self.robot_live_data[reg] in [1, 2]:
+                                        actor = f"Robot_{reg}"
+                                        break
+                            
+                            self.log(f"{actor} >> Lift {l_type} Door OPENED at Floor {current_station_floor}")
+                        
                         self.lifts[l_type]["door"] = "OPEN"
                         self.lifts[l_type]["floor"] = current_station_floor
                         self.sync_to_robot(addr.get("door"), 1)
@@ -262,6 +286,21 @@ class MasterSystem:
                         self.sync_to_robot(addr.get("lift_status"), 1)
                     
                     elif f_robot == current_station_floor: 
+                        if self.lifts[l_type]["door"] != "CLOSED" or self.lifts[l_type]["floor"] != current_station_floor:
+                            # Identify Actor
+                            actor = "Human"
+                            with self.lock:
+                                for reg in self.robot_dir_regs:
+                                    if reg < len(self.robot_live_data) and self.robot_live_data[reg] in [1, 2]:
+                                        actor = f"Robot_{reg}"
+                                        break
+                                    # Also check if it was previously tracked in a mission
+                                    if hasattr(self, 'robot_tracks') and self.robot_tracks.get(reg):
+                                        actor = f"Robot_{reg}"
+                                        break
+
+                            self.log(f"{actor} >> Lift {l_type} Door CLOSED at Floor {current_station_floor}")
+
                         self.lifts[l_type]["door"] = "CLOSED"
                         self.lifts[l_type]["floor"] = current_station_floor
                         self.sync_to_robot(addr.get("door"), 2)
@@ -277,6 +316,13 @@ class MasterSystem:
                                 self.log(f"!!!!! Floor {f_key} Heartbeat Frozen! Triggering Restart... !!!!!")
                                 station['is_active'] = False
                                 self.restart_lift_service(f_key)
+
+                # Periodic status logging
+                if time.time() - last_log_time > 5.0:
+                    status_msg = " | ".join([f"Lift {k}: F{v['floor']}({v['door']}) {'[BUSY]' if v['busy'] else '[IDLE]'}" for k, v in self.lifts.items()])
+                    # self.log(f"STATUS >> {status_msg}")
+                    last_log_time = time.time()
+
             except Exception as e:
                 pass
             time.sleep(0.4)
@@ -387,7 +433,7 @@ class MasterSystem:
                         self.sync_to_robot(DOOR_REG, 1 if door_val == 1 else 2)
 
                         if any_robot_active: 
-                            self.log(f"goooo!!!!")
+                            # self.log(f"goooo!!!!")
                             self.write_modbus(station_key, COLOR_REG, LedColor.PINK)
                             self.write_modbus(station_key, CMD_REG, action_cmd)
                             time.sleep(1)
@@ -398,7 +444,7 @@ class MasterSystem:
                             break
                         else:
                             if door_val == 1:
-                                self.log(f"⚡ Pulse doorOPEN")
+                                self.log(f"Pulse doorOPEN")
                                 self.write_modbus(station_key, COLOR_REG, LedColor.PINK)
                                 self.write_modbus(station_key, CMD_REG, 0)
                                 time.sleep(5)
@@ -627,5 +673,5 @@ def admin_panel():
 
 if __name__ == '__main__':
     master_node = MasterSystem()
-    print("----- Starting Server... -----")
+    logging.info("----- Starting Server... -----")
     app.run(host='0.0.0.0', port=5000, debug=False, use_reloader=False)
