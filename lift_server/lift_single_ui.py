@@ -19,8 +19,8 @@ logging.basicConfig(
     format='[%(asctime)s] %(message)s',
     datefmt='%d/%m/%Y %H:%M:%S',
     handlers=[
-        logging.FileHandler("lift_server.log", encoding='utf-8'),
-        logging.StreamHandler()
+        # logging.FileHandler("lift_server.log", encoding='utf-8'), # Comment this line to stop saving to file
+        logging.StreamHandler()                                   # This keeps logs visible in the terminal
     ]
 )
 
@@ -444,7 +444,7 @@ class MasterSystem:
                             break
                         else:
                             if door_val == 1:
-                                self.log(f"Pulse doorOPEN")
+                                # self.log(f"Pulse doorOPEN")
                                 self.write_modbus(station_key, COLOR_REG, LedColor.PINK)
                                 self.write_modbus(station_key, CMD_REG, 0)
                                 time.sleep(5)
