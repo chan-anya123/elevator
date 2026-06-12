@@ -37,17 +37,17 @@ The physical controller connected to each elevator.
             │
             ▼
 +-----------------------+
-|      Robot / AMR      | <--- PLC / Controller (Modbus TCP Client)
+|      Robot / AMR      | <--- Controller (Modbus TCP Client)
 +-----------+-----------+ 
             │ 
             ▼ Port 502
 +-----------------------+
-|  Lift Master Server   | <--- (Runs lift_single_ui.py or lift_single_ui.exe)
+|  Lift Master Server   | <--- (Runs lift_single_ui)
 +-----------+-----------+
             │ 
             ▼ Port 1502
 +-----------------------+
-|     Lift Station      | <--- (Arduino UNO Q - lift.ino)
+|     Lift Station      | <--- (Arduino UNO Q)
 +-----------------------+
 ```
 
@@ -121,8 +121,9 @@ The system provides multiple interfaces for integration with Robots, PLCs, and e
 | Method | Endpoint | Description |
 |---|---|---|
 | `GET` | `/status` | Get overall system status, version, and lift data. |
-| `GET` | `/api/get_lift_config` | Retrieve current `lift_config.json`. |
-| `POST` | `/api/upload_patch` | Upload `patch.zip` to trigger a system update. |
+| `GET` | `/get_lift_config` | Retrieve current `lift_config.json`. |
+| `GET` | `/download_log` | Download the current `lift_server.log` file. |
+| `POST` | `/upload_patch` | Upload `patch.zip` to trigger a system update. |
 | `GET` | `/admin` | Access the Web Management Dashboard. |
 
 **Example Response (`/status`):**
@@ -141,7 +142,7 @@ The system provides multiple interfaces for integration with Robots, PLCs, and e
         }
     },
     "status": "online",
-    "version": "1.0.8"
+    "version": "1.0.0"
 }
 
 ```
@@ -153,9 +154,9 @@ The Master Server acts as a Modbus Client/Server bridge to sync data with the Ro
 | Address | Type | Name | Description |
 |---|---|---|---|
 | `offset + 0` | R | Current Floor | Real-time floor position reported by the lift. |
-| `offset + 2` | R | Lift Ready | 1 = Lift is at target floor and ready for robot. |
+| `offset + 2` | R | Lift Status | 1 = Lift is at target floor and ready for robot. (Maps to `lift_status` in code) |
 | `offset + 4` | R | Door Status | 1 = Open, 2 = Closed. |
-| `offset + 6` | R/W | Mission Target | Write target floor number here to call the lift. |
+| `offset + 6` | R/W | Mission Target | Write target floor number here to call the lift (A=6, B=16). |
 | *Config List* | R/W | Robot Direction | Signal robot activity: **1** = Moving IN, **2** = Moving OUT, **0** = Clear. |
 
 ### 🤖 Robot Direction Handshake Logic
@@ -192,13 +193,25 @@ Each individual Lift Station (Arduino) exposes these registers for the Master Se
 
 ---
 
+## 🛡️ Reliability & Self-Healing
+
+The system is designed for high-availability in industrial environments:
+
+- **Aggressive Auto-Discovery**: The Master server scans the local subnet and all configured lift subnets every 120 seconds to find new or reconnected stations.
+- **Heartbeat Monitoring**: Master monitors a heartbeat counter from each station. If it freezes for >10 seconds, the station is marked offline.
+- **SSH Self-Healing**: If a station goes offline, the Master attempts to automatically restart the `lift-service.service` on the station via SSH.
+- **Log Rotation**: Logs are saved to `lift_server.log` with a 5MB rotation limit and 5-file history to prevent disk saturation.
+- **Hot-Reload**: Configuration changes made via the Admin UI are applied instantly without restarting the Master process.
+
+---
+
 ## 🔄 Updating the System (Web-Based)
 
 The system supports seamless updates via the Web Dashboard. No physical access or USB drive is required.
 
 ### 1. Prepare the Update (`patch.zip`)
 On your developer machine, create a ZIP file named **`patch.zip`**.
-- **For Windows**: Include `lift_single_ui.exe` and `version.txt`.
+- **For Windows**: Include `lift_single_ui.exe`.
 - **For Ubuntu**: Include `lift_single_ui.py` and `version.txt`.
 - *Note: You can ZIP the files directly or within a folder; the Smart Update tool handles both.*
 
