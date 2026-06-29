@@ -120,15 +120,13 @@ class MasterSystem:
         self.discover_stations()
         threading.Thread(target=self.main_control_loop, daemon=True).start()
         threading.Thread(target=self.mission_scanner_loop, daemon=True).start()
-        # --- [เพิ่มระบบสแกนซ้ำเบื้องหลังอัตโนมัติ] ---
         threading.Thread(target=self.rediscover_loop, daemon=True).start()
-        
         self.log(f"Master System Control Core Started.")
 
     def rediscover_loop(self):
         while True:
             time.sleep(120)  # auto-scan every 2 minutes
-            self.log("Auto-Scanning for new or reconnected lift stations...")
+            # self.log("Auto-Scanning for new or reconnected lift stations...")
             self.discover_stations()
 
     def get_my_subnet(self):
@@ -396,11 +394,11 @@ class MasterSystem:
 
                     case Sequence.MOVING:
                         self.write_modbus(station_key, BRIGHT_REG, self.bright)
-                        self.write_modbus(station_key, COLOR_REG, LedColor.BLUE)
+                        self.write_modbus(station_key, COLOR_REG, LedColor.GREEN)
                         self.write_modbus(station_key, CMD_REG, action_cmd)
                         time.sleep(0.4)
-                        # self.write_modbus(station_key, CMD_REG, 0)
-                        # time.sleep(0.2)
+                        self.write_modbus(station_key, CMD_REG, 0)
+                        time.sleep(0.2)
                         self.write_modbus(station_key, CMD_REG, led_cmd)
                         mission_status = Sequence.ARRIVED
 
@@ -476,7 +474,7 @@ class MasterSystem:
     def cleanup_mission(self, station_key, lift_type, target_reg, ready_reg, cmd_reg, color_reg):
         try:
             self.write_modbus(station_key, cmd_reg, 0)
-            self.write_modbus(station_key, color_reg, LedColor.GREEN)
+            self.write_modbus(station_key, color_reg, LedColor.BLUE)
             self.sync_to_robot(target_reg, 0)
             self.sync_to_robot(ready_reg, 0)
         except Exception as e:

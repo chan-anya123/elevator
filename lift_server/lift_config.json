@@ -1,9 +1,8 @@
 {
-    "central_server_ip": "127.0.0.1:8000",
-    "robot_ip": "192.168.10.5",
+    "robot_ip": "192.168.20.38",
     "settings": {
         "brightness": 80,
-        "max_timeout": 20,
+        "max_timeout": 15,
         "robot_dir_registers": [
             8,
             18,
@@ -13,42 +12,42 @@
     },
     "lifts": [
         {
-            "ip": "192.168.20.49",
+            "ip": "10.139.180.11",
             "reg_offset": 0,
             "comment": "Lift A1"
         },
         {
-            "ip": "192.168.20.60",
+            "ip": "10.139.180.21",
             "reg_offset": 0,
             "comment": "Lift A2"
         },
         {
-            "ip": "192.168.20.46",
+            "ip": "10.139.180.23",
             "reg_offset": 0,
             "comment": "Lift A3"
         },
         {
-            "ip": "192.168.20.52",
+            "ip": "10.139.181.16",
             "reg_offset": 0,
             "comment": "Lift A4"
         },
         {
-            "ip": "192.168.20.66",
+            "ip": "10.139.181.15",
             "reg_offset": 10,
             "comment": "Lift B1"
         },
         {
-            "ip": "192.168.20.43",
+            "ip": "10.139.180.26",
             "reg_offset": 10,
             "comment": "Lift B2"
         },
         {
-            "ip": "192.168.20.38",
+            "ip": "10.139.181.14",
             "reg_offset": 10,
             "comment": "Lift B3"
         },
         {
-            "ip": "192.168.20.37",
+            "ip": "10.139.181.13",
             "reg_offset": 10,
             "comment": "Lift B4"
         }
