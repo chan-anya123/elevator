@@ -9,7 +9,7 @@ import json
 import subprocess
 import socket
 import os
-from flask import Flask, jsonify, request, render_template_string, send_file
+from flask import Flask, jsonify, request, render_template_string, send_file, Response
 from datetime import datetime
 import platform
 from concurrent.futures import ThreadPoolExecutor
@@ -73,6 +73,7 @@ class MasterSystem:
     def __init__(self, config_path=CONFIG_FILE):
         self.config_path = config_path
         self.lock = threading.Lock()
+        self.robot_lock = threading.Lock()
         self.stations = {}
         
         self.lifts = {
@@ -85,6 +86,11 @@ class MasterSystem:
         }
         
         self.load_config(self.config_path)
+        
+        self.robot_tracks = {
+            "A": {reg: False for reg in self.robot_dir_regs},
+            "B": {reg: False for reg in self.robot_dir_regs}
+        }
         
         max_reg = max(self.robot_dir_regs) if self.robot_dir_regs else 38
         self.robot_live_data = [0] * (max_reg + 5)
@@ -146,8 +152,9 @@ class MasterSystem:
 
     def read_modbus(self, station_key, reg, count=1):
         if station_key not in self.stations: return None
-        client = self.stations[station_key]['client']
-        with self.lock:
+        station = self.stations[station_key]
+        client = station['client']
+        with station['lock']:
             try:
                 if not client.is_open: client.open()
                 res = client.read_holding_registers(reg, count)
@@ -159,8 +166,9 @@ class MasterSystem:
 
     def write_modbus(self, station_key, reg, val):
         if station_key not in self.stations: return None
-        client = self.stations[station_key]['client']
-        with self.lock:
+        station = self.stations[station_key]
+        client = station['client']
+        with station['lock']:
             try:
                 if not client.is_open: client.open()
                 res = client.write_single_register(reg, val)
@@ -217,6 +225,7 @@ class MasterSystem:
                     self.stations[station_key] = {
                         'ip': ip, 
                         'client': ModbusClient(host=ip, port=1502, auto_open=True, timeout=0.5),
+                        'lock': threading.Lock(),
                         'lift_id': l_id,
                         'addr': addr_map,
                         'last_heartbeat': -1,
@@ -229,7 +238,7 @@ class MasterSystem:
             pass
 
     def sync_to_robot(self, reg, val):
-        with self.lock:
+        with self.robot_lock:
             try:
                 if not self.robot_client.is_open: self.robot_client.open()
                 return self.robot_client.write_single_register(reg, val)
@@ -240,7 +249,8 @@ class MasterSystem:
         while True:
             try:
                 read_count = len(self.robot_live_data)
-                robot_data = self.robot_client.read_holding_registers(0, read_count)
+                with self.robot_lock:
+                    robot_data = self.robot_client.read_holding_registers(0, read_count)
                 if not robot_data:
                     time.sleep(1); continue
                 
@@ -297,7 +307,7 @@ class MasterSystem:
                                         actor = f"Robot_{reg}"
                                         break
                                     # Also check if it was previously tracked in a mission
-                                    if hasattr(self, 'robot_tracks') and self.robot_tracks.get(reg):
+                                    if any(self.robot_tracks[l].get(reg) for l in self.robot_tracks):
                                         actor = f"Robot_{reg}"
                                         break
 
@@ -336,7 +346,8 @@ class MasterSystem:
                     addr = self.lift_addrs[lid]
                     target_reg = addr.get("target", 6 if lid == "A" else 16)
                     
-                    t_val = self.robot_client.read_holding_registers(target_reg, 1)
+                    with self.robot_lock:
+                        t_val = self.robot_client.read_holding_registers(target_reg, 1)
                     if t_val and t_val[0] > 0:
                         target_floor = t_val[0]
                         station_key = f"{target_floor}{lid}"
@@ -367,7 +378,8 @@ class MasterSystem:
         mission_status = Sequence.IDLE
         start_pulsing_time = None
         try:
-            r_pos = self.robot_client.read_holding_registers(FLOOR_REG, 1)
+            with self.robot_lock:
+                r_pos = self.robot_client.read_holding_registers(FLOOR_REG, 1)
             current_f = r_pos[0] if r_pos else 0
 
             all_floors = [int(''.join(filter(str.isdigit, k))) for k, v in self.stations.items() if v.get('is_active')]
@@ -403,7 +415,8 @@ class MasterSystem:
                         mission_status = Sequence.ARRIVED
 
                     case Sequence.ARRIVED:
-                        r_pos_now = self.robot_client.read_holding_registers(FLOOR_REG, 1)
+                        with self.robot_lock:
+                            r_pos_now = self.robot_client.read_holding_registers(FLOOR_REG, 1)
                         d_stat = self.read_modbus(station_key, DOOR_REG)
                         if (r_pos_now and r_pos_now[0] == target_floor_num) and (d_stat and d_stat[0] == 1):
                             self.log(f"----- {lift_type} Arrived at Floor {target_floor_num} -----")
@@ -411,26 +424,27 @@ class MasterSystem:
                         time.sleep(0.5)
 
                     case Sequence.PULSING:
-                        if start_pulsing_time is None: 
-                            start_pulsing_time = time.time()
-                            self.robot_tracks = {reg: False for reg in self.robot_dir_regs}
-                        with self.lock:
-                            snapshot_data = list(self.robot_live_data)
-
                         any_robot_active = False  
                         all_cleared = True      
                         active_registers = self.robot_dir_regs
 
-                        for reg in active_registers:
-                            current_dir = snapshot_data[reg] if reg < len(snapshot_data) else 0
-                            if current_dir in [1, 2]:
-                                self.robot_tracks[reg] = True
-                                any_robot_active = True   
-                            if self.robot_tracks[reg] == True and current_dir != 0:
-                                all_cleared = False
+                        with self.lock:
+                            if start_pulsing_time is None: 
+                                start_pulsing_time = time.time()
+                                self.robot_tracks[lift_type] = {reg: False for reg in self.robot_dir_regs}
+                            
+                            snapshot_data = list(self.robot_live_data)
 
-                        if not any(self.robot_tracks.values()):
-                            all_cleared = False
+                            for reg in active_registers:
+                                current_dir = snapshot_data[reg] if reg < len(snapshot_data) else 0
+                                if current_dir in [1, 2]:
+                                    self.robot_tracks[lift_type][reg] = True
+                                    any_robot_active = True   
+                                if self.robot_tracks[lift_type][reg] == True and current_dir != 0:
+                                    all_cleared = False
+
+                            if not any(self.robot_tracks[lift_type].values()):
+                                all_cleared = False
 
                         door_check = self.read_modbus(station_key, DOOR_REG)
                         door_val = door_check[0] if door_check else 2
@@ -490,6 +504,9 @@ class MasterSystem:
         ssh_cmd = [
             "ssh",
             "-o", "ConnectTimeout=5",
+            "-o", "StrictHostKeyChecking=no",
+            "-o", "UserKnownHostsFile=/dev/null",
+            "-o", "BatchMode=yes",
             f"arduino@{ip}",
             "sudo systemctl restart lift-service.service"
         ]
@@ -525,10 +542,56 @@ def get_config():
 
 @app.route('/download_log', methods=['GET'])
 def download_log():
-    log_file = "lift_server.log"
+    log_file = os.path.abspath("lift_server.log")
     if os.path.exists(log_file):
         return send_file(log_file, as_attachment=True)
     return jsonify({"status": "error", "message": "Log file not found"}), 404
+
+@app.route('/stream_logs_live', methods=['GET'])
+def stream_logs_live():
+    def generate():
+        # 1. ต้องนำหน้าด้วย data: และจบด้วย \n\n ตามมาตรฐาน SSE
+        yield b"data: --- Connected to Live Log Stream ---\n\n"
+        log_path = "lift_server.log"
+        while not os.path.exists(log_path):
+            time.sleep(0.5)
+        pos = 0 
+        try:
+            while True:
+                if not os.path.exists(log_path):
+                    time.sleep(0.5)
+                    continue
+                try:
+                    size = os.path.getsize(log_path)
+                    if size < pos:
+                        pos = 0
+                    lines = []
+                    if size > pos:
+                        with open(log_path, "r", encoding="utf-8", errors="replace") as f:
+                            f.seek(pos)
+                            lines = f.readlines()
+                            pos = f.tell()
+                    if lines:
+                        for line in lines:
+                            # 2. จัดรูปแบบแต่ละบรรทัดให้เป็น SSE
+                            clean_line = line.strip()
+                            yield f"data: {clean_line}\n\n".encode('utf-8')
+                    else:
+                        # 3. ส่งสัญญาณ Keep-alive (Ping) เพื่อไม่ให้ Postman ตัดการเชื่อมต่อเมื่อไม่มี Log ใหม่
+                        # yield b": keepalive\n\n"
+                        time.sleep(0.5)
+                except Exception as e:
+                    yield f"data: Error: {e}\n\n".encode('utf-8')
+                    time.sleep(0.5)
+        except GeneratorExit:
+            logging.info("Live log stream client disconnected.")
+            
+    # 4. จุดที่สำคัญที่สุด: เปลี่ยน mimetype เป็น text/event-stream
+    resp = Response(generate(), mimetype='text/event-stream')
+    resp.headers['X-Accel-Buffering'] = 'no'
+    resp.headers['Cache-Control'] = 'no-cache, must-revalidate'
+    resp.headers['Connection'] = 'keep-alive'
+    return resp
 
 @app.route('/upload_patch', methods=['POST'])
 def upload_patch():
