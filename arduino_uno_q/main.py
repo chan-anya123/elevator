@@ -9,6 +9,7 @@ import subprocess
 import logging
 import msgpack
 from pyModbusTCP.server import ModbusServer
+import shlex
 
 # =========================================================
 # FLASK
@@ -237,11 +238,12 @@ def modbus_sync_loop():
             if cmd_reg:
                 cmd = cmd_reg[0]
                 if cmd != 99:
+                    server.data_bank.set_holding_registers(addr["command"], [99])
                     now = time.time()
                     # SOLENOID
                     if cmd in [0, 1, 2, 5]:
                         allow = (cmd in [0, 5]) or ((now - last_move_time) > MOVE_DEBOUNCE_TIME)
-                        if allow and cmd != last_solenoid_cmd:
+                        if allow:
                             res = send_rpc("move", [str(cmd)])
                             if res != "ERROR":
                                 print(f"----- Solenoid CMD: {cmd} -----")
@@ -250,12 +252,10 @@ def modbus_sync_loop():
                                     last_move_time = now
                     # BUTTON LED
                     elif cmd in [3, 4, 6]:
-                        if cmd != last_button_led_cmd:
-                            res = send_rpc("move", [str(cmd)])
-                            if res != "ERROR":
-                                print(f"----- Button LED CMD: {cmd} -----")
-                                last_button_led_cmd = cmd
-                    server.data_bank.set_holding_registers(addr["command"], [99])
+                        res = send_rpc("move", [str(cmd)])
+                        if res != "ERROR":
+                            print(f"----- Button LED CMD: {cmd} -----")
+                            last_button_led_cmd = cmd
 
         except Exception as e:
             print(f"!!!!! Modbus Sync Error: {e}")
@@ -377,29 +377,28 @@ def change_wifi():
 
     if not ssid:
         return jsonify({"status": "error", "message": "SSID is required"})
+        
+    # เข้ารหัสตัวแปรให้ปลอดภัยจาก Command Injection
+    safe_ssid = shlex.quote(ssid)
+    safe_pw = shlex.quote(pw)
+    
     mode = cached_config.get("network_mode", "dhcp")
     cmd = (
-        f"nmcli con delete '{ssid}' > /dev/null 2>&1 || true; "
-        f"nmcli con add type wifi con-name '{ssid}' ifname wlan0 ssid '{ssid}' "
+        f"nmcli con delete {safe_ssid} > /dev/null 2>&1 || true; "
+        f"nmcli con add type wifi con-name {safe_ssid} ifname wlan0 ssid {safe_ssid} "
         f"connection.autoconnect-priority 100 "
         f"802-11-wireless-security.key-mgmt wpa-psk "
-        f"802-11-wireless-security.psk '{pw}'; "
+        f"802-11-wireless-security.psk {safe_pw}; "
     )
     if mode == "static":
-        ip = cached_config.get("static_ip", "")
-        gw = cached_config.get("gateway", "")
+        ip = cached_config.get("static_ip")
+        gw = cached_config.get("gateway")
         subnet = cached_config.get("subnet", "24")
         if ip and gw:
-            cmd += (
-                f"nmcli con mod '{ssid}' ipv4.method manual "
-                f"ipv4.addresses {ip}/{subnet} "
-                f"ipv4.gateway {gw} "
-                f"ipv4.dns '8.8.8.8,8.8.4.4'; " # ใช้ลูกศรคั่น DNS
-            )
-    cmd += f"nmcli con up '{ssid}'"
-    
-    # พิมพ์คำสั่งออกมาดูเพื่อ Debug ใน Log
-    # print(f"----- Executing: {cmd}")
+            # แก้ไขเป็นแบบนี้ค่ะ
+            cmd += f"nmcli con mod {safe_ssid} ipv4.method manual ipv4.addresses {ip}/{subnet} ipv4.gateway {gw} ipv4.dns '8.8.8.8 8.8.4.4'; "
+
+    cmd += f"nmcli con up {safe_ssid}"
     subprocess.Popen(cmd, shell=True)
     return jsonify({"status": "switching", "target": ssid})
 
