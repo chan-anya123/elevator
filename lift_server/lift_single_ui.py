@@ -467,12 +467,14 @@ class MasterSystem:
                                 self.write_modbus(station_key, CMD_REG, 0)
                                 time.sleep(5)
                                 self.write_modbus(station_key, CMD_REG, action_cmd)
+                                time.sleep(1.5)
                             else: 
                                 self.log(f"!!!! {lift_type} Door CLOSED - Resetting Timer !!!!!")
                                 self.write_modbus(station_key, COLOR_REG, LedColor.RED)
                                 self.write_modbus(station_key, CMD_REG, 0)
                                 time.sleep(5)
                                 self.write_modbus(station_key, CMD_REG, action_cmd)
+                                time.sleep(1.5)
                            
                         if time.time() - start_pulsing_time >= self.max_timeout:
                             self.write_modbus(station_key, CMD_REG, 0) 
