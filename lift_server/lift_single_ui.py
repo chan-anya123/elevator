@@ -13,6 +13,8 @@ from flask import Flask, jsonify, request, render_template_string, send_file, Re
 from datetime import datetime
 import platform
 from concurrent.futures import ThreadPoolExecutor
+import shutil
+import sys
 
 # --- [Logging Configuration] ---
 logging.basicConfig(
@@ -29,7 +31,7 @@ logging.basicConfig(
 logging.getLogger('werkzeug').setLevel(logging.ERROR)
 
 CONFIG_FILE = 'lift_config.json'
-VERSION = "1.0.0"
+VERSION = "1.0.1"
 if os.path.exists("version.txt"):
     try:
         with open("version.txt", "r") as f:
@@ -465,16 +467,16 @@ class MasterSystem:
                                 self.log(f"Pulse doorOPEN")
                                 self.write_modbus(station_key, COLOR_REG, LedColor.PINK)
                                 self.write_modbus(station_key, CMD_REG, 0)
-                                time.sleep(5)
+                                time.sleep(2)
                                 self.write_modbus(station_key, CMD_REG, action_cmd)
-                                time.sleep(1.5)
+                                time.sleep(1)
                             else: 
                                 self.log(f"!!!! {lift_type} Door CLOSED - Resetting Timer !!!!!")
                                 self.write_modbus(station_key, COLOR_REG, LedColor.RED)
                                 self.write_modbus(station_key, CMD_REG, 0)
-                                time.sleep(5)
+                                time.sleep(2)
                                 self.write_modbus(station_key, CMD_REG, action_cmd)
-                                time.sleep(1.5)
+                                time.sleep(1)
                            
                         if time.time() - start_pulsing_time >= self.max_timeout:
                             self.write_modbus(station_key, CMD_REG, 0) 
@@ -544,10 +546,42 @@ def get_config():
 
 @app.route('/download_log', methods=['GET'])
 def download_log():
-    log_file = os.path.abspath("lift_server.log")
+    # --- ส่วนที่เพิ่มเข้ามาเพื่อหาโฟลเดอร์จริงของไฟล์ .exe ---
+    if getattr(sys, 'frozen', False):
+        # ถ้ากำลังรันผ่านไฟล์ .exe (PyInstaller)
+        base_dir = os.path.dirname(sys.executable)
+    else:
+        # ถ้ารันผ่าน python script ปกติ (.py)
+        base_dir = os.path.dirname(os.path.abspath(__file__))
+    
+    # รวม Path ให้เป็น Absolute Path ที่ถูกต้องบน Windows
+    log_file = os.path.join(base_dir, "lift_server.log")
+    temp_file = os.path.join(base_dir, "lift_server_download.log")
+    # --------------------------------------------------
+
     if os.path.exists(log_file):
-        return send_file(log_file, as_attachment=True)
-    return jsonify({"status": "error", "message": "Log file not found"}), 404
+        try:
+            # คัดลอกไฟล์ไปยังโฟลเดอร์จริง
+            shutil.copyfile(log_file, temp_file)
+            
+            # ส่งไฟล์ให้ผู้ใช้ดาวน์โหลด
+            response = send_file(temp_file, as_attachment=True)
+            
+            # ลบไฟล์ชั่วคราวทิ้งหลังจากส่งเสร็จ
+            @response.call_on_close
+            def remove_file():
+                if os.path.exists(temp_file):
+                    try:
+                        os.remove(temp_file)
+                    except:
+                        pass
+                    
+            return response
+        except Exception as e:
+            return jsonify({"status": "error", "message": f"Windows File Access Error: {e}"}), 500
+            
+    return jsonify({"status": "error", "message": f"Log file not found at {log_file}"}), 404
+
 
 @app.route('/stream_logs_live', methods=['GET'])
 def stream_logs_live():
