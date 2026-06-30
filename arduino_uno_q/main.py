@@ -243,7 +243,7 @@ def modbus_sync_loop():
                     # SOLENOID
                     if cmd in [0, 1, 2, 5]:
                         allow = (cmd in [0, 5]) or ((now - last_move_time) > MOVE_DEBOUNCE_TIME)
-                        if allow:
+                        if allow and cmd != last_solenoid_cmd:
                             res = send_rpc("move", [str(cmd)])
                             if res != "ERROR":
                                 print(f"----- Solenoid CMD: {cmd} -----")
@@ -252,10 +252,11 @@ def modbus_sync_loop():
                                     last_move_time = now
                     # BUTTON LED
                     elif cmd in [3, 4, 6]:
-                        res = send_rpc("move", [str(cmd)])
-                        if res != "ERROR":
-                            print(f"----- Button LED CMD: {cmd} -----")
-                            last_button_led_cmd = cmd
+                        if cmd != last_button_led_cmd:
+                            res = send_rpc("move", [str(cmd)])
+                            if res != "ERROR":
+                                print(f"----- Button LED CMD: {cmd} -----")
+                                last_button_led_cmd = cmd
 
         except Exception as e:
             print(f"!!!!! Modbus Sync Error: {e}")
