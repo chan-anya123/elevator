@@ -67,6 +67,7 @@ The physical controller connected to each elevator.
 - **RGB Feedback**: WS2812B LED strip for status (Moving, Arrived, Error).
 - **Door Monitoring**: Real-time door status reporting.
 - **Real-time OS**: Built on Zephyr RTOS for deterministic I/O handling.
+- **B1 Floor Pin Configuration**: Employs pin `A4` for the door sensor on floor B1, whereas other floors utilize `A1`.
 
 ---
 
@@ -77,6 +78,7 @@ The physical controller connected to each elevator.
 ├── arduino_uno_q/          # Lift Station (Slave)
 │   ├── arduino_code/       # MCU Firmware (Zephyr/C++)
 │   ├── main.py             # MPU Controller (Python/Flask/Modbus)
+│   ├── update_mcu.sh       # Remote compilation & deployment script
 │   └── config.json         # Station settings
 ├── lift_server/            # Master Server
 │   ├── lift_single_ui.py   # Master logic with Web UI
@@ -122,7 +124,7 @@ The system provides multiple interfaces for integration with Robots, PLCs, and e
 |---|---|---|
 | `GET` | `/status` | Get overall system status, version, and lift data. |
 | `GET` | `/get_lift_config` | Retrieve current `lift_config.json`. |
-| `GET` | `/download_log` | Download the current `lift_server.log` file. |
+| `GET` | `/download_log` | Download the current `lift_server.log` file (safely handled via temporary files to avoid access lock issues). |
 | `POST` | `/upload_patch` | Upload `patch.zip` to trigger a system update. |
 | `GET` | `/admin` | Access the Web Management Dashboard. |
 
@@ -142,7 +144,7 @@ The system provides multiple interfaces for integration with Robots, PLCs, and e
         }
     },
     "status": "online",
-    "version": "1.0.0"
+    "version": "1.0.1"
 }
 
 ```

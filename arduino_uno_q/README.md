@@ -240,9 +240,13 @@ The MCU is responsible for all real-time elevator control functions.
 
 | Pin | Function    |
 | --- | ----------- |
-| A1  | Door Sensor |
+| A1  | Door Sensor (All floors except B1) |
+| A4  | Door Sensor (Floor B1 specific) |
 | A2  | Up Button   |
 | A3  | Down Button |
+
+> [!NOTE]
+> **Door Sensor Pin Variation**: For floor **B1**, the physical door sensor is wired to pin **A4** on the Arduino board. On all other floors (e.g. L1, L2, etc.), the door sensor is wired to pin **A1**.
 
 ## Outputs
 
@@ -396,15 +400,34 @@ sudo pip3 install pyModbusTCP --break-system-packages
 
 # Updating MCU Firmware
 
-To update the Arduino (MCU layer) firmware directly from the MPU (Linux layer), use the provided `update_mcu.sh` script. This script automatically handles stopping the lift service, compiling the `.ino` file using `arduino-cli`, flashing the board via USB/Serial, and restarting the service.
+The MCU (Arduino layer) firmware can be compiled, deployed, and flashed to a remote target board using the provided `update_mcu.sh` script.
 
-**Prerequisites:**
-You must have `arduino-cli` installed and the appropriate core (`arduino:renesas_uno`) configured on the MPU.
+This script runs on your developer machine and performs the following actions:
+1. **Syncs files**: Uploads the `arduino_code`, `main.py`, and `templates` folders to the remote target board (MPU) via SSH. It uses `rsync` if available, or falls back to a compressed `tar` pipeline.
+2. **Prepares build directory**: Copies code to `/tmp/lift` on the remote board to meet the `arduino-cli` sketch naming standards.
+3. **Installs library dependencies**: Connects via SSH to the remote board and runs `arduino-cli lib install Arduino_RouterBridge` to ensure the required bridge library is available.
+4. **Compiles firmware**: Compiles the code using the Fully Qualified Board Name (FQBN) `arduino:zephyr:unoq` on the remote board.
+5. **Flashes MCU**: Discovers the active Arduino UNO Q board ports (e.g. via `arduino-cli board list`) and flashes the compiled firmware to it.
+6. **Restarts services**: Restarts the `arduino-router.service` and `lift-service.service` services on the target board via `sudo` to ensure the new MPU and MCU code takes effect.
 
-**Usage:**
+## Configuration Variables
+
+At the top of the `update_mcu.sh` script, configure the target environment:
+- `TARGET_IP`: The IP address of the target Linux board (MPU) (default: `192.168.20.60`).
+- `TARGET_USER`: The SSH username (default: `arduino`).
+- `TARGET_DIR`: The path where python scripts and configuration reside on the target (default: `/home/arduino/lift`).
+- `FQBN`: Fully Qualified Board Name of the MCU (default: `arduino:zephyr:unoq`).
+
+## Prerequisites
+- SSH access to the remote target board.
+- `arduino-cli` installed and configured on the remote target board.
+- Appropriate board support package/core for FQBN `arduino:zephyr:unoq` installed on the target.
+
+## Usage
+Run the script from your developer machine in the `arduino_uno_q` directory:
 ```bash
 cd arduino_uno_q
-sudo ./update_mcu.sh
+./update_mcu.sh
 ```
 
 ---
