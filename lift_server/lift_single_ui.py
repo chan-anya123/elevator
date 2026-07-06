@@ -582,7 +582,6 @@ def download_log():
             
     return jsonify({"status": "error", "message": f"Log file not found at {log_file}"}), 404
 
-
 @app.route('/stream_logs_live', methods=['GET'])
 def stream_logs_live():
     def generate():
@@ -784,6 +783,25 @@ def admin_panel():
         version=VERSION
     )
 
+@app.route('/update_config', methods=['POST'])
+def api_update_config():
+    try:
+        data = request.get_json()
+        if not data:
+            return jsonify({"status": "error", "message": "No data provided"}), 400
+        
+        # บันทึกไฟล์ Config ใหม่
+        with open(CONFIG_FILE, 'w', encoding='utf-8') as f:
+            json.dump(data, f, indent=4, ensure_ascii=False)
+        
+        # สั่งโหลด Config ใหม่ทันที (Hot-Reload)
+        if master_node:
+            master_node.load_config(CONFIG_FILE)
+            
+        return jsonify({"status": "success", "message": "Config updated and reloaded successfully"})
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
+    
 if __name__ == '__main__':
     master_node = MasterSystem()
     logging.info("----- Starting Server... -----")
