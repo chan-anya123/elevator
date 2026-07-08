@@ -6,13 +6,8 @@ import sys
 import shutil
 import subprocess
 
-if getattr(sys, 'frozen', False):
-    BASE_DIR = os.path.dirname(sys.executable)
-else:
-    BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-
-LOCAL_VERSION_FILE = os.path.join(BASE_DIR, "version.txt")
-PATCH_FILE = os.path.join(BASE_DIR, "patch.zip")
+LOCAL_VERSION_FILE = "version.txt"
+PATCH_FILE = "patch.zip"
 
 def get_local_version():
     if os.path.exists(LOCAL_VERSION_FILE):
@@ -24,17 +19,14 @@ def restart_server():
     print("[*] กำลังรีสตาร์ท Lift Server...")
     try:
         if platform.system() == "Windows":
-            lift_exe = os.path.join(BASE_DIR, "lift_single_ui.exe")
-            lift_py = os.path.join(BASE_DIR, "lift_single_ui.py")
-            if os.path.exists(lift_exe):
-                subprocess.Popen([lift_exe], cwd=BASE_DIR, creationflags=0x00000008) # DETACHED_PROCESS
+            if os.path.exists("lift_single_ui.exe"):
+                subprocess.Popen(["lift_single_ui.exe"], creationflags=0x00000008) # DETACHED_PROCESS
             else:
                 # Use sys.executable for python if running as script
-                subprocess.Popen([sys.executable, lift_py], cwd=BASE_DIR, creationflags=0x00000008)
+                subprocess.Popen([sys.executable, "lift_single_ui.py"], creationflags=0x00000008)
         else:
             # สำหรับ Linux (Ubuntu) สั่งรันใน Session ใหม่
-            lift_py = os.path.join(BASE_DIR, "lift_single_ui.py")
-            subprocess.Popen(["python3", lift_py], cwd=BASE_DIR, start_new_session=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            subprocess.Popen(["python3", "lift_single_ui.py"], start_new_session=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         print("[✅] รีสตาร์ทสำเร็จ!")
     except Exception as e:
         print(f"[⚠️] รีสตาร์ทล้มเหลว: {e}")
@@ -78,7 +70,7 @@ def apply_patch():
 
                 # แตกไฟล์ออกมาที่โฟลเดอร์หลักโดยตรง
                 source = zip_ref.open(file_info)
-                target_path = os.path.join(BASE_DIR, filename)
+                target_path = os.path.join(".", filename)
                 with source, open(target_path, "wb") as target:
                     shutil.copyfileobj(source, target)
                 print(f"[+] ติดตั้ง: {filename}")
