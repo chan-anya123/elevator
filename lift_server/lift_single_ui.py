@@ -16,18 +16,13 @@ from concurrent.futures import ThreadPoolExecutor
 import shutil
 import sys
 
-if getattr(sys, 'frozen', False):
-    BASE_DIR = os.path.dirname(sys.executable)
-else:
-    BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-
 # --- [Logging Configuration] ---
 logging.basicConfig(
     level=logging.INFO,
     format='[%(asctime)s] %(message)s',
     datefmt='%d/%m/%Y %H:%M:%S',
     handlers=[
-        RotatingFileHandler(os.path.join(BASE_DIR, "lift_server.log"), maxBytes=5*1024*1024, backupCount=5, encoding='utf-8'), 
+        RotatingFileHandler("lift_server.log", maxBytes=5*1024*1024, backupCount=5, encoding='utf-8'), 
         logging.StreamHandler()                                   # This keeps logs visible in the terminal
     ]
 )
@@ -35,12 +30,11 @@ logging.basicConfig(
 # Hide "GET /status" logs (Werkzeug)
 logging.getLogger('werkzeug').setLevel(logging.ERROR)
 
-CONFIG_FILE = os.path.join(BASE_DIR, 'lift_config.json')
+CONFIG_FILE = 'lift_config.json'
 VERSION = "1.0.1"
-version_file = os.path.join(BASE_DIR, "version.txt")
-if os.path.exists(version_file):
+if os.path.exists("version.txt"):
     try:
-        with open(version_file, "r") as f:
+        with open("version.txt", "r") as f:
             VERSION = f.read().strip()
     except: pass
 
@@ -552,9 +546,18 @@ def get_config():
 
 @app.route('/download_log', methods=['GET'])
 def download_log():
+    # --- ส่วนที่เพิ่มเข้ามาเพื่อหาโฟลเดอร์จริงของไฟล์ .exe ---
+    if getattr(sys, 'frozen', False):
+        # ถ้ากำลังรันผ่านไฟล์ .exe (PyInstaller)
+        base_dir = os.path.dirname(sys.executable)
+    else:
+        # ถ้ารันผ่าน python script ปกติ (.py)
+        base_dir = os.path.dirname(os.path.abspath(__file__))
+    
     # รวม Path ให้เป็น Absolute Path ที่ถูกต้องบน Windows
-    log_file = os.path.join(BASE_DIR, "lift_server.log")
-    temp_file = os.path.join(BASE_DIR, "lift_server_download.log")
+    log_file = os.path.join(base_dir, "lift_server.log")
+    temp_file = os.path.join(base_dir, "lift_server_download.log")
+    # --------------------------------------------------
 
     if os.path.exists(log_file):
         try:
@@ -584,7 +587,7 @@ def stream_logs_live():
     def generate():
         # 1. ต้องนำหน้าด้วย data: และจบด้วย \n\n ตามมาตรฐาน SSE
         yield b"data: --- Connected to Live Log Stream ---\n\n"
-        log_path = os.path.join(BASE_DIR, "lift_server.log")
+        log_path = "lift_server.log"
         while not os.path.exists(log_path):
             time.sleep(0.5)
         pos = 0 
@@ -635,22 +638,19 @@ def upload_patch():
 
     if file and file.filename.endswith('.zip'):
         # บันทึกไฟล์เป็น patch.zip เพื่อให้ update.py ตรวจเจอ
-        save_path = os.path.join(BASE_DIR, 'patch.zip')
+        save_path = os.path.join(os.getcwd(), 'patch.zip')
         file.save(save_path)
 
         # ฟังก์ชันสั่งรันตัวอัปเดตหลังจากส่ง Response กลับไปแล้ว
         def trigger_update():
             time.sleep(2)
             if platform.system() == "Windows":
-                update_exe = os.path.join(BASE_DIR, "update.exe")
-                update_py = os.path.join(BASE_DIR, "update.py")
-                if os.path.exists(update_exe):
-                    subprocess.Popen([update_exe], cwd=BASE_DIR)
+                if os.path.exists("update.exe"):
+                    subprocess.Popen(["update.exe"])
                 else:
-                    subprocess.Popen(["python", update_py], cwd=BASE_DIR)
+                    subprocess.Popen(["python", "update.py"])
             else:
-                update_py = os.path.join(BASE_DIR, "update.py")
-                subprocess.Popen(["python3", update_py], cwd=BASE_DIR)
+                subprocess.Popen(["python3", "update.py"])
 
         threading.Thread(target=trigger_update).start()
 
@@ -661,6 +661,36 @@ def upload_patch():
 
     return jsonify({"status": "error", "message": "Invalid file type. Please upload a .zip file."}), 400
 
+@app.route('/update_config', methods=['POST'])
+def update_config_api():
+    global master_node
+    try:
+        # ตรวจสอบว่า request ที่ส่งมาเป็น JSON หรือไม่
+        if not request.is_json:
+            return jsonify({"status": "error", "message": "Request payload must be JSON format."}), 400
+        
+        parsed_json = request.get_json()
+        
+        # ตรวจสอบ Key ที่จำเป็นเพื่อให้มั่นใจว่าโครงสร้าง Config ถูกต้อง
+        if "robot_ip" in parsed_json and "lifts" in parsed_json and "settings" in parsed_json:
+            # บันทึกลงไฟล์ lift_config.json
+            with open(CONFIG_FILE, 'w', encoding='utf-8') as f:
+                json.dump(parsed_json, f, indent=4, ensure_ascii=False)
+            
+            # อัปเดตค่าไปยัง MasterSystem แบบเรียลไทม์ (Hot-Reload)
+            if master_node:
+                master_node.load_config(CONFIG_FILE)
+                
+            return jsonify({"status": "success", "message": "Configuration updated and hot-reloaded successfully."}), 200
+        else:
+            return jsonify({
+                "status": "error", 
+                "message": "Missing required configuration keys: 'robot_ip', 'lifts', or 'settings'."
+            }), 400
+
+    except Exception as e:
+        return jsonify({"status": "error", "message": f"Server error: {str(e)}"}), 500
+    
 @app.route('/admin', methods=['GET', 'POST'])
 def admin_panel():
     global master_node
@@ -783,25 +813,6 @@ def admin_panel():
         version=VERSION
     )
 
-@app.route('/update_config', methods=['POST'])
-def api_update_config():
-    try:
-        data = request.get_json()
-        if not data:
-            return jsonify({"status": "error", "message": "No data provided"}), 400
-        
-        # บันทึกไฟล์ Config ใหม่
-        with open(CONFIG_FILE, 'w', encoding='utf-8') as f:
-            json.dump(data, f, indent=4, ensure_ascii=False)
-        
-        # สั่งโหลด Config ใหม่ทันที (Hot-Reload)
-        if master_node:
-            master_node.load_config(CONFIG_FILE)
-            
-        return jsonify({"status": "success", "message": "Config updated and reloaded successfully"})
-    except Exception as e:
-        return jsonify({"status": "error", "message": str(e)}), 500
-    
 if __name__ == '__main__':
     master_node = MasterSystem()
     logging.info("----- Starting Server... -----")
