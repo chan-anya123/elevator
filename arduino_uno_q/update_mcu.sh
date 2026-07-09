@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # --- ตั้งค่าบอร์ดปลายทาง ---
-TARGET_IP="192.168.20.60"        # เปลี่ยนเป็น IP ของบอร์ด Linux ตัวใหม่
+TARGET_IP="192.168.20.33"        # เปลี่ยนเป็น IP ของบอร์ด Linux ตัวใหม่
 TARGET_USER="arduino"            # เปลี่ยนเป็น Username ของบอร์ดใหม่
 TARGET_DIR="/home/arduino/lift"  # โฟลเดอร์ปลายทางที่ต้องการเอาไฟล์ไปวาง
 FQBN="arduino:zephyr:unoq"

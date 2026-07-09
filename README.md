@@ -56,11 +56,13 @@ The physical controller connected to each elevator.
 ## ✨ Features
 
 ### Master Server
-- **Auto-Discovery**: Automatically scans and connects to lift stations defined in `lift_config.json`.
+- **Auto-Discovery**: Automatically scans target IPs, the local subnet, and configured subnets every 120 seconds to find or revive lift stations.
 - **Robot Sync**: Bi-directional synchronization with Robot PLC via Modbus registers.
-- **Web Management Dashboard**: Central UI for configuration and system updates.
+- **Web Management Dashboard**: Central UI for configuration, real-time live log viewing, and system updates.
+- **Live Log Streaming**: Real-time log monitoring directly from the browser using Server-Sent Events (SSE).
+- **Configuration Hot-Reload**: Apply configuration changes instantly via the Web Dashboard or API without restarting the Master process.
 - **Auto-Update & Restart**: Integrated update system that handles process termination, file replacement, and automatic restart.
-- **Self-Healing**: Automatically restarts disconnected lift stations via SSH if communication fails.
+- **Self-Healing**: Automatically restarts disconnected lift stations via SSH if communication fails or heartbeats freeze.
 
 ### Lift Station
 - **Safety Logic**: Press-lock protection (5s) and solenoid auto-release (800ms).
@@ -122,11 +124,35 @@ The system provides multiple interfaces for integration with Robots, PLCs, and e
 
 | Method | Endpoint | Description |
 |---|---|---|
+| `GET` | `/` | Redirects to `/admin` via client-side JavaScript. |
 | `GET` | `/status` | Get overall system status, version, and lift data. |
-| `GET` | `/get_lift_config` | Retrieve current `lift_config.json`. |
-| `GET` | `/download_log` | Download the current `lift_server.log` file (safely handled via temporary files to avoid access lock issues). |
-| `POST` | `/upload_patch` | Upload `patch.zip` to trigger a system update. |
+| `GET` | `/get_lift_config` | Retrieve current `lift_config.json` configuration. |
+| `GET` | `/download_log` | Download the current `lift_server.log` file (safely copied via a temporary file to avoid lock issues). |
+| `GET` | `/stream_logs_live` | Stream `lift_server.log` live in real-time using Server-Sent Events (SSE). |
+| `POST` | `/upload_patch` | Upload `patch.zip` to trigger a system update and restart. |
+| `POST` | `/update_config` | Update system-wide configuration via JSON payload (Hot-Reload supported). |
 | `GET` | `/admin` | Access the Web Management Dashboard. |
+| `POST` | `/admin` | Save and update configuration details from the Web Dashboard form. |
+
+#### HTTP Response Codes Reference
+
+| Endpoint | Method | Response Code | Description / Condition |
+|---|---|---|---|
+| `/` | `GET` | `200 OK` | Redirects client browser to `/admin`. |
+| `/status` | `GET` | `200 OK` | Returns overall system status and lift details. |
+| | | `503 Service Unavailable` | Master node is still starting up. |
+| `/get_lift_config` | `GET` | `200 OK` | Returns the content of `lift_config.json`. |
+| `/download_log` | `GET` | `200 OK` | Returns the `lift_server.log` file attachment. |
+| | | `404 Not Found` | The log file does not exist on disk. |
+| | | `500 Internal Server Error` | File access/lock error on Windows. |
+| `/stream_logs_live` | `GET` | `200 OK` | Establishes Live SSE stream. |
+| `/upload_patch` | `POST` | `200 OK` | Update zip uploaded successfully; system update/restart triggered. |
+| | | `400 Bad Request` | Missing file part, empty filename, or not a `.zip` file. |
+| `/update_config` | `POST` | `200 OK` | Configuration updated and hot-reloaded successfully. |
+| | | `400 Bad Request` | Payload is not JSON or missing required configuration keys. |
+| | | `500 Internal Server Error` | Unexpected server error while updating config. |
+| `/admin` | `GET` | `200 OK` | Loads the Web Management Dashboard UI. |
+| `/admin` | `POST` | `200 OK` | Configuration updated via form submit (success/error message displayed). |
 
 **Example Response (`/status`):**
 ```json
@@ -188,10 +214,10 @@ Each individual Lift Station (Arduino) exposes these registers for the Master Se
 | 0 | R | Floor | Current Floor reported by sensors. |
 | 1 | R | Heartbeat | Counter that increments every 1s. |
 | 2 | R | Status | 0 = Offline, 1 = Ready. |
-| 3 | R/W | Command | 0=Stop, 1=Move Up, 2=Move Down. |
-| 4 | R | Door | 1 = Open, 2 = Closed. |
-| 5 | R/W | LED Color | Select RGB status color (1-9). |
-| 7 | R/W | LED Brightness| 0-100% brightness level. |
+| 3 | R/W | Command | Command status: **0** = Stop, **1** = Move Up, **2** = Move Down, **3** = Indicator Up, **4** = Indicator Down. |
+| 4 | R | Door | Door status: **1** = Open, **2** = Closed. |
+| 5 | R/W | LED Color | Select RGB status color: **1** = GREEN, **2** = BLUE, **3** = PURPLE, **4** = RED, **5** = OFF, **6** = YELLOW, **7** = ORANGE, **8** = PINK, **9** = WHITE. |
+| 7 | R/W | LED Brightness| LED brightness level (**0-100%**). |
 
 ---
 
