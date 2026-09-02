@@ -1,36 +1,36 @@
-# ระบบควบคุมลิฟต์สำหรับหุ่นยนต์และระบบอัตโนมัติ (Elevator Control System)
+# Elevator Control System (Industrial Robotics & Automation)
 
-โปรเจกต์นี้เป็นระบบควบคุมและเชื่อมต่อลิฟต์สำหรับงานอุตสาหกรรมและหุ่นยนต์เคลื่อนที่อัตโนมัติ (AGV / AMR) รองรับการทำงานร่วมกับ PLC, Modbus TCP, Node-RED และบอร์ดประมวลผล **Arduino UNO Q** (Linux MPU + Zephyr RTOS MCU)
+A robust, multi-architecture elevator control and monitoring platform designed for industrial automation and Autonomous Mobile Robot (AMR / AGV) integration. This repository supports Modbus TCP, Node-RED, and the **Arduino UNO Q** dual-processor platform (Linux MPU + Zephyr RTOS MCU).
 
-ภายในคลังโค้ดนี้แบ่งออกเป็น 3 รูปแบบสถาปัตยกรรมหลักตามลักษณะหน้างานและการนำไปใช้งาน:
+The codebase is organized into **three distinct deployment architectures** depending on system requirements and hardware topology:
 
 ---
 
-## 📁 โครงสร้างโฟลเดอร์และหน้าที่การทำงาน (Folder Overview)
+## 📁 Repository Structure & Architectural Overview
 
 ```text
 /home/cookies/lift/
-├── arduino_uno_q/    # [รูปแบบ 1] โค้ดสำหรับบอร์ด Arduino UNO Q ประจำสถานี (ทำงานร่วมกับ lift_server)
-├── lift_server/      # [รูปแบบ 1] เซิร์ฟเวอร์กลาง Master Server (ทำงานร่วมกับ arduino_uno_q)
-├── lift_tcp/         # [รูปแบบ 2] โค้ด Standalone บน Arduino UNO Q บอร์ดเดียวรันได้ทันที
-├── wave_share/       # [รูปแบบ 3] การตั้งค่าและ Flow สำหรับ Node-RED + Waveshare Relay Board
-├── requirements.txt  # Python Dependencies รวม
-└── README.md         # เอกสารอธิบายระบบ (ไฟล์นี้)
+├── arduino_uno_q/    # [Architecture 1] Floor station controller (Works with lift_server)
+├── lift_server/      # [Architecture 1] Centralized master orchestrator (Works with arduino_uno_q)
+├── lift_tcp/         # [Architecture 2] Standalone all-in-one controller (Runs directly on Arduino UNO Q)
+├── wave_share/       # [Architecture 3] Node-RED automation flows & Waveshare Modbus relay configuration
+├── requirements.txt  # Shared Python dependencies
+└── README.md         # System documentation (This file)
 ```
 
-### ตารางเปรียบเทียบสถาปัตยกรรมแต่ละโฟลเดอร์
+### Architectural Comparison
 
-| โฟลเดอร์ | สถาปัตยกรรม | อุปกรณ์ฮาร์ดแวร์ | หน้าที่หลัก |
+| Architecture | Folder(s) | Hardware Platform | Core Function & Operational Role |
 | :--- | :--- | :--- | :--- |
-| **`arduino_uno_q/`** + **`lift_server/`** | **Master-Station Architecture** (เซิร์ฟเวอร์กลาง + สถานีย่อย) | PC/Server + บอร์ด Arduino UNO Q ประจำแต่ละชั้น | ทำงานร่วมกัน: `arduino_uno_q` คุมฮาร์ดแวร์แต่ละชั้น ส่งข้อมูลเข้า `lift_server` เพื่อบริหารจัดการหลายลิฟต์/หลายชั้นพร้อมกันผ่านหน้า Web UI กลาง |
-| **`lift_tcp/`** | **Standalone Controller** (บอร์ดเดียวจบ ไม่ต้องมีเซิร์ฟเวอร์) | บอร์ด Arduino UNO Q ตัวเดียวต่อสถานี | **ใช้แค่บอร์ดอาร์ดูอิโนตัวเดียวแล้วรันได้เลย**: รัน Dual-Modbus Bridge (ต่อตรงกับหุ่นยนต์ Port 502 + เซิร์ฟเวอร์ในตัว Port 1502) พร้อม Web Dashboard ในตัว |
-| **`wave_share/`** | **Node-RED Automation** (โหนดเรด) | Waveshare Modbus TCP Relay + Node-RED Host | **ใช้สำหรับโหนดเรด**: ควบคุมลิฟต์ผ่านกล่อง Waveshare Relay โดยใช้ Node-RED จัดการ Logic การเรียกชั้นและบันทึกประวัติการทำงาน |
+| **1. Master-Station System** | **`arduino_uno_q/`** + **`lift_server/`** | Central PC / Server + Arduino UNO Q per floor | **Cooperative Client-Server Architecture**: `arduino_uno_q` boards act as floor station nodes executing hardware I/O, while `lift_server` serves as the central orchestrator coordinating multi-floor / multi-lift calls with AMR robots and providing a centralized web dashboard. |
+| **2. Standalone Controller** | **`lift_tcp/`** | Single Arduino UNO Q board per station | **Runs standalone directly on the Arduino UNO Q board without needing any server**: Implements a Dual-Modbus Bridge (direct connection to robot on Port 502 + local server on Port 1502), autonomous state machine, and embedded web UI on a single board. |
+| **3. Node-RED Automation** | **`wave_share/`** | Waveshare Modbus TCP Relay + Node-RED Host | **Dedicated for Node-RED**: Controls elevator buttons and door sensors via an industrial Waveshare Modbus relay module, with business logic, robot synchronization, and event logging managed through Node-RED flows. |
 
 ---
 
-## 1. รูปแบบ Master-Station: `arduino_uno_q/` และ `lift_server/` (ทำงานร่วมกัน)
+## 1. Master-Station Architecture: `arduino_uno_q/` + `lift_server/`
 
-สถาปัตยกรรมนี้เหมาะสำหรับ **อาคารที่มีหลายชั้น หรือ มีลิฟต์หลายตัว (Multi-Lift System)** โดยแบ่งการทำงานออกเป็น 2 ส่วน:
+Designed for **multi-floor buildings and multi-lift complexes** where centralized orchestration, aggregated telemetry, and multi-station health monitoring are required.
 
 ```text
                          +-----------------------------+
@@ -41,9 +41,9 @@
                          +-----------------------------+
                          |         lift_server         |
                          |  (Central Master Server)    |
-                         |  - จัดการสถานะลิฟต์รวม      |
-                         |  - สแกนหาบอร์ดในเครือข่าย   |
-                         |  - หน้า Admin UI ควบคุมรวม   |
+                         |  - Orchestrates all lifts   |
+                         |  - Subnet Auto-Discovery    |
+                         |  - Central Admin Dashboard  |
                          +--------------+--------------+
                                         |
                  +----------------------+----------------------+
@@ -51,162 +51,163 @@
                  v                                             v
     +--------------------------+                  +--------------------------+
     |      arduino_uno_q       |                  |      arduino_uno_q       |
-    | (Station ชั้น 1 - Lift A)|                  | (Station ชั้น 2 - Lift A)|
+    | (Floor 1 Station Node)   |                  | (Floor 2 Station Node)   |
     | - Arduino UNO Q          |                  | - Arduino UNO Q          |
-    | - คุม Relay, ปุ่ม, ไฟ    |                  | - คุม Relay, ปุ่ม, ไฟ    |
+    | - Controls relays & LEDs |                  | - Controls relays & LEDs |
     +--------------------------+                  +--------------------------+
 ```
 
-### 1.1 `arduino_uno_q/` (Station Controller ประจำแต่ละชั้น)
-โค้ดสำหรับติดตั้งและรันบนบอร์ด **Arduino UNO Q** ประจำหน้าประตูลิฟต์แต่ละชั้น
-- **หน้าที่การทำงาน**:
-  - เชื่อมต่อกับฮาร์ดแวร์จริงหน้าลิฟต์: โซลินอยด์กดปุ่มลิฟต์ (UP/DOWN), ไฟสถานะปุ่มกด, เซ็นเซอร์ตรวจจับสถานะประตูเปิด/ปิด (Reed Switch/Proximity), และไฟแถบ WS2812B RGB
-  - เปิด **Modbus TCP Server ที่พอร์ต 1502** เพื่อให้ `lift_server` อ่านสถานะ (Heartbeat, Floor, Door, Status) และส่งคำสั่งควบคุมเข้ามา
-  - รัน **MessagePack RPC Client** สื่อสารข้ามโพรเซสระหว่างระบบปฏิบัติการ Linux บนบอร์ดกับเฟิร์มแวร์ MCU ผ่าน `/var/run/arduino-router.sock`
-  - มี Web UI ขนาดเล็กสำหรับตั้งค่า Wi-Fi และทดสอบสั่งงาน Relay เฉพาะตัวบอร์ด
-- **ไฟล์สำคัญในโฟลเดอร์**:
-  - [`main.py`](arduino_uno_q/main.py): Service หลักบน Linux MPU (Modbus Server 1502 + Flask API)
-  - [`arduino_code/lift.ino`](arduino_uno_q/arduino_code/lift.ino): เฟิร์มแวร์ C++/Zephyr RTOS สำหรับ MCU STM32 คุมพิน I/O แบบ Real-time
-  - [`config.json`](arduino_uno_q/config.json): การตั้งค่าเครือข่าย, หมายเลขชั้น (`floor_name`), และชื่อลิฟต์ (`lift_id`)
-  - [`update_mcu.sh`](arduino_uno_q/update_mcu.sh): สคริปต์คอมไพล์และอัปเดตเฟิร์มแวร์เข้าบอร์ดจากระยะไกลผ่าน SSH
+### 1.1 `arduino_uno_q/` (Station Node Controller)
+Deployed on an **Arduino UNO Q** board installed at each floor station.
+- **Key Responsibilities**:
+  - Interacts directly with elevator hardware: call button solenoids (UP/DOWN), physical button LEDs, door sensors (Reed switches/proximity), and WS2812B RGB strip.
+  - Hosts a **Modbus TCP Server on Port 1502** allowing `lift_server` to poll floor/door status, read heartbeat signals, and issue actuation commands.
+  - Runs a **MessagePack RPC Client** over `/var/run/arduino-router.sock` to bridge Linux Python processes with the real-time MCU Zephyr firmware.
+  - Includes a localized web configuration interface for testing relays and configuring station Wi-Fi.
+- **Key Files**:
+  - [`main.py`](arduino_uno_q/main.py): Primary station service (Modbus Server 1502 + Flask REST API).
+  - [`arduino_code/lift.ino`](arduino_uno_q/arduino_code/lift.ino): Zephyr RTOS C++ firmware for real-time deterministic pin I/O and safety debouncing.
+  - [`config.json`](arduino_uno_q/config.json): Floor identifier (`floor_name`), lift ID (`lift_id`), and network configuration.
+  - [`update_mcu.sh`](arduino_uno_q/update_mcu.sh): Remote build and flash deployment script via SSH.
 
 ### 1.2 `lift_server/` (Central Master Orchestrator)
-เซิร์ฟเวอร์ศูนย์กลาง รันบนคอมพิวเตอร์แม่ข่าย, Mini PC หรือ Industrial PC ประจำอาคาร
-- **หน้าที่การทำงาน**:
-  - **เชื่อมต่อกับหุ่นยนต์ (Robot / AMR)**: เชื่อมต่อ Modbus TCP Port 502 กับหุ่นยนต์ เพื่อรับคำสั่งเรียกชั้น (`call_target`) และรายงานสถานะว่าลิฟต์พร้อมแล้วหรือไม่
-  - **จัดการและมอนิเตอร์บอร์ดลูกข่ายทั้งหมด (`arduino_uno_q`)**:
-    - มีระบบ Auto-Discovery สแกนค้นหาบอร์ดในวง Subnet อัตโนมัติ
-    - ตรวจจับสัญญาณ Heartbeat หากบอร์ดใดขาดการติดต่อไปเกิน 10 วินาที จะแจ้งเตือน Offline
-    - มีระบบ **SSH Self-Healing** พยายามสั่งรีสตาร์ท Service บนบอร์ดปลายทางอัตโนมัติเมื่อเกิดปัญหา
-  - **Web Management Console (Port 5000)**:
-    - หน้าแดชบอร์ดแสดงสถานะของลิฟต์ทุกตัวและทุกสถานีพร้อมกันแบบ Real-time
-    - หน้าต่างตั้งค่า Mapping IP ของแต่ละชั้น (`lift_config.json`)
-    - ระบบดู Log ย้อนหลังและดู Log สด (Server-Sent Events)
-    - ระบบ **OTA Update**: อัปโหลดไฟล์ `patch.zip` ผ่านหน้าเว็บเพื่ออัปเดตโค้ดเซิร์ฟเวอร์อัตโนมัติ
-- **ไฟล์สำคัญในโฟลเดอร์**:
-  - [`lift_single_ui.py`](lift_server/lift_single_ui.py): ซอฟต์แวร์ Master Server หลัก พร้อมหน้า Web Admin Dashboard
-  - [`lift_config.json`](lift_server/lift_config.json): ไฟล์คอนฟิกกำหนด IP และ Register Offset ของบอร์ดแต่ละสถานี
-  - [`update.py`](lift_server/update.py): สคริปต์จัดการแตกไฟล์และอัปเดตเวอร์ชันผ่าน Web Patch
+Runs on a central host machine, Mini PC, or Industrial PC.
+- **Key Responsibilities**:
+  - **Robot AMR/AGV Bridge**: Connects to the robot PLC via Modbus TCP Port 502 to receive target floor calls (`call_target`) and report lift availability.
+  - **Station Lifecycle Management**:
+    - Periodically scans subnets for new or reconnected `arduino_uno_q` station nodes.
+    - Monitors station heartbeats; flags nodes as offline if heartbeats stall for >10 seconds.
+    - **SSH Self-Healing**: Automatically triggers remote service restarts on stations when communication faults are detected.
+  - **Centralized Web Admin Panel (Port 5000)**:
+    - Real-time aggregated view of all elevators and floors.
+    - Station IP mapping and register offset configuration editor (`lift_config.json`).
+    - Live streaming log viewer (Server-Sent Events) and historical log downloads.
+    - **OTA Patch Updater**: Allows uploading `patch.zip` to upgrade the server without manual shell intervention.
+- **Key Files**:
+  - [`lift_single_ui.py`](lift_server/lift_single_ui.py): Master server core engine with web dashboard.
+  - [`lift_config.json`](lift_server/lift_config.json): Central station registry mapping IPs, offsets, and robot parameters.
+  - [`update.py`](lift_server/update.py): Automated patch extractor and hot-restart utility.
 
 ---
 
-## 2. รูปแบบ Standalone: `lift_tcp/` (ใช้แค่บอร์ดอาร์ดูอิโนแล้วรันได้เลย)
+## 2. Standalone Architecture: `lift_tcp/` (Plug & Play on Arduino UNO Q)
 
-โฟลเดอร์นี้ถูกออกแบบขึ้นเพื่อความง่าย คล่องตัว และเชื่อถือได้สูงสุด **"ใช้แค่บอร์ด Arduino UNO Q ตัวเดียวแล้วรันได้ทันที โดยไม่ต้องพึ่งพา lift_server"**
+Engineered for **maximum simplicity and self-reliance**. This architecture runs **completely standalone on a single Arduino UNO Q board without requiring `lift_server`**.
 
 ```text
                +---------------------------------------------------+
-               |            Robot / AMR PLC / คอนโทรลเลอร์         |
+               |            Robot / AMR PLC / Controller           |
                +-------------------------+-------------------------+
                                          |
                                          | Modbus TCP (Port 502)
                                          v
 +---------------------------------------------------------------------------------+
-| บอร์ด Arduino UNO Q (Linux MPU + Zephyr MCU) - โฟลเดอร์ lift_tcp/                 |
+| Arduino UNO Q Board (Linux MPU + Zephyr MCU) - lift_tcp/                        |
 |                                                                                 |
-|  [Modbus Client Port 502] <---> อ่านคำสั่งเรียกชั้นจากหุ่นยนต์ตรงๆ              |
-|  [Modbus Server Port 1502] <--> เปิดให้ SCADA / PLC อื่นๆ คุมได้ด้วย            |
-|  [Mission State Machine]  <---> วิ่ง Sequence: MOVING -> ARRIVED -> PULSE -> IDLE|
-|  [Flask Web UI Port 5000] <---> หน้าจอตั้งค่าและทดสอบควบคุมผ่านเว็บสวยงาม       |
-|  [mDNS & Recovery Hotspot]<---> เข้าเว็บผ่าน http://lift<mac>.local:5000         |
+|  [Modbus Client (Port 502)]  <---> Directly polls robot mission calls           |
+|  [Modbus Server (Port 1502)] <---> Exposes local registers to SCADA / PLC       |
+|  [Mission State Machine]     <---> Pipeline: IDLE -> MOVING -> ARRIVED -> PULSE |
+|  [Web UI & REST API (5000)]  <---> Glassmorphism responsive dashboard           |
+|  [mDNS & Recovery Hotspot]   <---> Access via http://lift<mac>.local:5000       |
 |                                                                                 |
-|  [MCU Layer (STM32)]      <---> สั่ง Solenoid, อ่านเซ็นเซอร์ประตู, ขับไฟ WS2812B|
+|  [MCU Firmware Layer (STM32)]<---> Drives solenoids, senses door, WS2812B LEDs  |
 +---------------------------------------------------------------------------------+
 ```
 
-### จุดเด่นของ `lift_tcp/`:
-1. **บอร์ดเดียวจบ (All-in-One)**: รวมทั้ง Client, Server, Web UI, State Machine, และ Firmware อยู่ในตัวบอร์ดเดียว
-2. **Dual-Modbus Bridge ในตัว**:
-   - เป็น **Modbus Client (Port 502)** เชื่อมต่อไปยังหุ่นยนต์ (`robot_ip:502`) อ่าน Register การเรียกชั้นอัตโนมัติ
-   - เปิด **Modbus Server (Port 1502)** ในตัวบอร์ด ให้ระบบภายนอกหรือโปรแกรมเสริมอื่นๆ สื่อสารเข้ามาได้
-3. **Mission State Machine อัตโนมัติ**:
-   - เมื่อหุ่นยนต์สั่งเรียกชั้น บอร์ดจะขับ Solenoid กดปุ่มลิฟต์ $\rightarrow$ รอเซ็นเซอร์ประตูเปิดจริง $\rightarrow$ ส่งสัญญาณบอกหุ่นยนต์ $\rightarrow$ Pulse โซลินอยด์หน่วงเวลาเปิดประตู $\rightarrow$ เคลียร์สถานะเสร็จสิ้น
-   - มี **Watchdog 60 วินาที** หากลิฟต์ค้างหรือเกิดข้อผิดพลาด จะตัดกลับสถานะ IDLE อัตโนมัติ ป้องกันระบบค้าง
-4. **ไฟสถานะ WS2812B RGB**: แสดงสถานะการทำงานด้วยแสงไฟ (น้ำเงิน = พร้อม, เขียว = กำลังเรียก, ชมพู = ประตูเปิด/ถึงชั้นแล้ว, แดง = ผิดพลาด)
-5. **Zero-Configuration mDNS & Recovery Hotspot**:
-   - เข้าหน้าเว็บได้ทันทีผ่านชื่อ Hostname: `http://lift<4_ตัวท้าย_MAC>.local:5000`
-   - หาก Wi-Fi หลุดหรือยังไม่ได้ตั้งค่า บอร์ดจะปล่อย Hotspot กู้ภัยชื่อ `NextElevator_<MAC>` (รหัสผ่าน `12345678`) อัตโนมัติ
+### Key Advantages of `lift_tcp/`:
+1. **Zero External Server Dependency (All-in-One)**:
+   - The entire elevator controller, mission sequencer, safety watchdog, web interface, and hardware firmware reside on a single Arduino UNO Q board.
+2. **Integrated Dual-Modbus Bridge**:
+   - **Modbus Client (Port 502)**: Connects directly to `robot_ip:502`, monitors `call_target`, and synchronizes floor/door telemetry upon state changes.
+   - **Modbus Server (Port 1502)**: Runs concurrently on `0.0.0.0:1502` to accept secondary commands from local automation or SCADA.
+3. **Autonomous Mission State Machine & 60s Watchdog**:
+   - Executes the complete floor call cycle: Solenoid actuation $\rightarrow$ Door open verification $\rightarrow$ Signal robot $\rightarrow$ Multi-pulse door-hold sequence $\rightarrow$ Reset.
+   - If an elevator cycle becomes stalled for >60 seconds, the built-in watchdog automatically aborts the mission and resets the state to `IDLE`.
+4. **WS2812B RGB Feedback**:
+   - Visual status cues: **BLUE** = Ready/Idle, **GREEN** = Calling/Moving, **PINK** = Door Open/Holding, **RED** = Error/Fault.
+5. **Zero-Configuration Networking**:
+   - Automatic mDNS broadcast (`http://lift<last4_mac>.local:5000`).
+   - Dynamic emergency Wi-Fi hotspot (`NextElevator_<MAC>`, password: `12345678`) if network connectivity fails.
 
-### ไฟล์สำคัญใน `lift_tcp/`:
-- [`main.py`](lift_tcp/main.py): โปรแกรมหลักที่รวม Bridge, Web Server, State Machine และ Wi-Fi Manager
-- [`arduino_code/lift.ino`](lift_tcp/arduino_code/lift.ino): เฟิร์มแวร์ MCU Zephyr RTOS สำหรับขับฮาร์ดแวร์
-- [`arduino_code/ws2812b-bitbang.h`](lift_tcp/arduino_code/ws2812b-bitbang.h): ไดรเวอร์ขับไฟ RGB WS2812B แบบ Bit-banging
-- [`templates/ui.html`](lift_tcp/templates/ui.html): หน้าจอ Web Dashboard ทันสมัย Glassmorphism
-- [`lift_config.json`](lift_tcp/lift_config.json): การตั้งค่าหมายเลขชั้น, IP หุ่นยนต์, และที่อยู่ Modbus Registers
-- [`update_mcu.sh`](lift_tcp/update_mcu.sh): เครื่องมืออัปเดตโค้ดและแฟลช MCU ผ่าน SSH ในคำสั่งเดียว (รองรับ `--skip-mcu`, `--install-deps`)
-- [`MANUAL.md`](lift_tcp/MANUAL.md): คู่มือทางเทคนิคและสเปกการทำงานอย่างละเอียดของ `lift_tcp`
+### Key Files in `lift_tcp/`:
+- [`main.py`](lift_tcp/main.py): Unified controller engine combining Modbus bridge, state machine, REST API, and network manager.
+- [`arduino_code/lift.ino`](lift_tcp/arduino_code/lift.ino): MCU Zephyr RTOS firmware for deterministic I/O.
+- [`arduino_code/ws2812b-bitbang.h`](lift_tcp/arduino_code/ws2812b-bitbang.h): Bit-banging driver for WS2812B RGB LEDs.
+- [`templates/ui.html`](lift_tcp/templates/ui.html): Responsive glassmorphism web console.
+- [`lift_config.json`](lift_tcp/lift_config.json): Floor name, lift ID, robot IP, and register mapping settings.
+- [`update_mcu.sh`](lift_tcp/update_mcu.sh): One-click deployment script with SWD direct upload, automatic venv dependency resolution, and non-blocking fallback.
+- [`MANUAL.md`](lift_tcp/MANUAL.md): Comprehensive technical specification and register reference for `lift_tcp`.
 
-### คำสั่งสั่งรัน / อัปเดต `lift_tcp`:
+### Deployment & Flashing:
 ```bash
-# อัปเดตโค้ด Python และแฟลชเฟิร์มแวร์ MCU เข้าบอร์ดปลายทาง
+# Full deployment: sync Python/UI + compile & flash MCU firmware via SWD
 /home/cookies/lift/lift_tcp/update_mcu.sh 192.168.20.49
 
-# อัปเดตเฉพาะโค้ด Python และหน้าเว็บอย่างรวดเร็ว (ข้ามการแฟลช MCU)
+# Fast update: sync Python and Web templates only (skip MCU flashing)
 /home/cookies/lift/lift_tcp/update_mcu.sh 192.168.20.49 --skip-mcu
 ```
 
 ---
 
-## 3. รูปแบบ Node-RED: `wave_share/` (ใช้สำหรับโหนดเรด)
+## 3. Node-RED Automation: `wave_share/` (For Node-RED Deployments)
 
-โฟลเดอร์นี้จัดเตรียมไว้ **"สำหรับผู้ที่ใช้งานระบบผ่าน Node-RED (โหนดเรด)"** ร่วมกับฮาร์ดแวร์ **Waveshare Modbus TCP Relay Module** แทนการใช้บอร์ด Arduino UNO Q
+Created for environments using **Node-RED** as the orchestration middleware along with industrial **Waveshare Modbus TCP Relay modules** instead of Arduino UNO Q hardware.
 
 ```text
 +-----------------------+     Modbus TCP (Port 502)     +-----------------------+
 |   Robot (AGV / AMR)   | <---------------------------> |       Node-RED        |
-+-----------------------+                               |  (รัน flows_new.json) |
++-----------------------+                               |  (Runs flows_new.json)|
                                                         +-----------+-----------+
                                                                     | Modbus TCP (4196)
                                                                     v
                                                         +-----------------------+
                                                         | Waveshare Modbus      |
                                                         | Relay Controller      |
-                                                        | - DI: เซ็นเซอร์ประตู   |
-                                                        | - DO: คุม Solenoid    |
+                                                        | - DI: Door Sensors    |
+                                                        | - DO: Solenoid Relays |
                                                         +-----------------------+
 ```
 
-### หน้าที่และการทำงานของ `wave_share/`:
-- **Hardware Integration**: เชื่อมต่อกล่องรีเลย์ Waveshare Modbus Relay ผ่านสาย LAN (เช่น IP `192.168.1.200:4196`)
-  - **Digital Input (DI)**: ต่อเซ็นเซอร์ประตูลิฟต์, สวิตช์ปุ่มกดหน้าชั้น
-  - **Digital Output (DO)**: ต่อโซลินอยด์กดปุ่มเรียกขึ้น/ลง และหลอดไฟแสดงสถานะ
-- **Node-RED Automation**:
-  - มีไฟล์ Flow สำหรับ Import เข้า Node-RED ทำหน้าที่รัน Logic ควบคุมลิฟต์, เชื่อมต่อ Modbus ระหว่าง Robot กับ Waveshare
-  - จัดการ Event การเปิด-ปิดประตูลิฟต์, เคลียร์สถานะเมื่อลิฟต์มาถึง
-  - บันทึกประวัติการทำงานและแจ้งเตือนสถานะการเชื่อมต่อ
-- **ไฟล์สำคัญในโฟลเดอร์**:
-  - [`flows_new.json`](wave_share/flows_new.json): ไฟล์ Export ของ Node-RED Flow พร้อมใช้งาน
-  - [`config.json`](wave_share/config.json): การกำหนดค่า Modbus Registers และ Coils ของอุปกรณ์ Waveshare
-  - [`daily_elevator_log.csv`](wave_share/daily_elevator_log.csv): ตัวอย่างโครงสร้างไฟล์บันทึกประวัติการทำงาน (Timestamp, Door Event, Physical Button, Manual Trigger)
+### Responsibilities of `wave_share/`:
+- **Hardware Interface**: Communicates with a Waveshare Modbus Relay box over Ethernet (default: `192.168.1.200:4196`).
+  - **Digital Inputs (DI)**: Physical floor buttons and elevator door limit sensors.
+  - **Digital Outputs (DO)**: UP/DOWN solenoid actuators and directional indicator lamps.
+- **Node-RED Integration**:
+  - Ready-to-import flow handles elevator scheduling, robot call synchronization, and door sequence timers.
+  - Logs door events, physical button presses, and communication diagnostics.
+- **Key Files**:
+  - [`flows_new.json`](wave_share/flows_new.json): Complete Node-RED flow configuration for immediate import.
+  - [`config.json`](wave_share/config.json): Modbus register and coil mapping definitions for the Waveshare device.
+  - [`daily_elevator_log.csv`](wave_share/daily_elevator_log.csv): Operational audit log format recording door transitions, manual calls, and faults.
 
 ---
 
-## 🧭 คำแนะนำการเลือกใช้งาน (Decision Guide)
+## 🧭 Decision Guide: Which Architecture to Use?
 
-| กรณีการใช้งาน | โฟลเดอร์ที่ควรเลือก | เหตุผล |
+| Use Case / Scenario | Recommended Solution | Rationale |
 | :--- | :--- | :--- |
-| **ต้องการติดตั้งแบบง่าย รวดเร็ว ใช้แค่บอร์ด Arduino UNO Q ตัวเดียวต่อสถานี** | 👉 **`lift_tcp/`** | รันบอร์ดเดี่ยวได้ทันที ไม่ต้องมีเซิร์ฟเวอร์กลาง คุยกับหุ่นยนต์ตรงๆ มีหน้าจอ Web UI และ Hotspot ในตัว |
-| **มีลิฟต์หลายตัว หลายชั้น ต้องการรวมศูนย์และดู Dashboard ลิฟต์ทุกตัวในหน้าจอเดียว** | 👉 **`arduino_uno_q/`** + **`lift_server/`** | บอร์ด `arduino_uno_q` คุมฮาร์ดแวร์แต่ละชั้น แล้วให้ `lift_server` เป็น Master รวมศูนย์ คอยตรวจสอบ Heartbeat และ Self-healing |
-| **มีระบบเดิมที่ใช้ Node-RED อยู่แล้ว หรือต้องการใช้กล่องรีเลย์สำเร็จรูปอุตสาหกรรม** | 👉 **`wave_share/`** | นำไฟล์ `flows_new.json` ไป Import ใน Node-RED เพื่อเชื่อมต่อกับบอร์ดรีเลย์ Waveshare ได้ทันที |
+| **Standalone setup on a single Arduino board with minimal infrastructure** | 👉 **`lift_tcp/`** | Runs directly on Arduino UNO Q without requiring an external server. Connects straight to the robot, features an autonomous state machine, and provides a built-in web dashboard. |
+| **Multi-lift or multi-floor facility requiring centralized monitoring and control** | 👉 **`arduino_uno_q/`** + **`lift_server/`** | `arduino_uno_q` operates as dedicated floor station nodes while `lift_server` provides centralized aggregation, heartbeat health checks, auto-discovery, and self-healing. |
+| **Facility utilizing existing Node-RED infrastructure or industrial relay boxes** | 👉 **`wave_share/`** | Import `flows_new.json` directly into Node-RED to command Waveshare Modbus TCP relay hardware without writing custom microcontroller code. |
 
 ---
 
-## 🧰 ข้อมูลพินฮาร์ดแวร์สำหรับบอร์ด Arduino UNO Q (Hardware Pinout)
+## 🧰 Arduino UNO Q Hardware Specifications & Pin Mapping
 
-สำหรับการใช้งานโฟลเดอร์ `lift_tcp/` หรือ `arduino_uno_q/` พินบนบอร์ด Arduino UNO Q มีการต่อวงจรดังนี้:
+When using either `lift_tcp/` or `arduino_uno_q/`, the physical I/O connections on the Arduino UNO Q board are defined as follows:
 
-| พิน Arduino UNO Q | ประเภท | หน้าที่การทำงาน | หมายเหตุ |
+| Pin | Type | Function | Notes |
 | :---: | :---: | :--- | :--- |
-| **A1** | Digital Input | เซ็นเซอร์ตรวจจับประตูลิฟต์ (ชั้นทั่วไป) | Active LOW (Pull-up) ประตูเปิด = LOW / ประตูเปิดวงจร = HIGH |
-| **A4** | Digital Input | เซ็นเซอร์ตรวจจับประตูลิฟต์ (ชั้น B1) | ใช้เฉพาะกรณีติดตั้งที่ชั้นใต้ดิน B1 |
-| **A2** | Digital Input | สวิตช์ปุ่มกดเรียกลิฟต์ขึ้น (UP Button) | ปุ่มกด Manual หน้าชั้น |
-| **A3** | Digital Input | สวิตช์ปุ่มกดเรียกลิฟต์ลง (DOWN Button) | ปุ่มกด Manual หน้าชั้น |
-| **D11** | Digital Output | รีเลย์ขับโซลินอยด์ปุ่มขึ้น (UP Solenoid) | ควบคุมรีเลย์กดปุ่มลิฟต์ขึ้น |
-| **D7** | Digital Output | รีเลย์ขับโซลินอยด์ปุ่มลง (DOWN Solenoid) | ควบคุมรีเลย์กดปุ่มลิฟต์ลง |
-| **D8** | Digital Output | ไฟแสดงสถานะปุ่มกดขึ้น (UP Button LED) | สว่างเมื่อลิฟต์กำลังถูกเรียกขึ้น |
-| **D12** | Digital Output | ไฟแสดงสถานะปุ่มกดลง (DOWN Button LED) | สว่างเมื่อลิฟต์กำลังถูกเรียกลง |
-| **D6** | Digital Output | สัญญาณข้อมูลไฟ RGB WS2812B (Data) | แถบไฟ RGB 16 ดวง แสดงสีบอกสถานะลิฟต์ |
+| **A1** | Digital Input | Door Sensor (Standard Floors) | Active LOW (Pull-up). Circuit closed = Door Open. |
+| **A4** | Digital Input | Door Sensor (Basement B1) | Dedicated door sensor input for basement floor B1. |
+| **A2** | Digital Input | UP Elevator Button | Manual floor call button input. |
+| **A3** | Digital Input | DOWN Elevator Button | Manual floor call button input. |
+| **D11** | Digital Output | UP Solenoid Relay | Actuates physical elevator UP call button. |
+| **D7** | Digital Output | DOWN Solenoid Relay | Actuates physical elevator DOWN call button. |
+| **D8** | Digital Output | UP Button Indicator LED | Illuminates when UP call is active. |
+| **D12** | Digital Output | DOWN Button Indicator LED | Illuminates when DOWN call is active. |
+| **D6** | Digital Output | WS2812B RGB Data Line | 16-LED addressable NeoPixel strip indicating system state. |
 
-### กลไกความปลอดภัยในตัวบอร์ด (Built-in Safety):
-- **Press Lock Protection**: ล็อกการกดปุ่มซ้ำซ้อนภายใน **5,000 ms** เพื่อป้องกันการกดปุ่มรัว
-- **Solenoid Auto-Release**: ตัดการจ่ายไฟโซลินอยด์อัตโนมัติภายใน **800 ms** เพื่อป้องกันขดลวดโซลินอยด์ไหม้
+### Built-in Hardware Safety Parameters
+- **Press Lock Protection**: Rapid button presses are locked and debounced for **5,000 ms**.
+- **Solenoid Auto-Release**: Actuator outputs automatically disengage after **800 ms** to protect physical coils against overheating.
