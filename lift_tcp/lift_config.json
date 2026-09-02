@@ -1,0 +1,30 @@
+{
+    "network_mode": "dhcp",
+    "static_ip": "",
+    "gateway": "",
+    "subnet": "",
+    "floor_name": "1",
+    "lift_id": "B",
+    "robot_ip": "10.139.160.146",
+    "addr": {
+        "robot_port_502": {
+            "floor": 10,
+            "lift_status": 12,
+            "door": 14,
+            "call_target": 16
+        },
+        "board_port_1502": {
+            "floor": 10,
+            "heartbeat": 11,
+            "lift_status": 12,
+            "command": 13,
+            "door": 14,
+            "led_target": 15,
+            "led_bright": 17
+        }
+    },
+    "settings": {
+        "brightness": 10,
+        "pulse_count": 5
+    }
+}

@@ -1,0 +1,1286 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Elevator Control Center</title>
+
+<!-- Modern Pastel Google Fonts & Icons -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+<style>
+:root {
+    --bg-pastel: #f8fafc;
+    --card-bg: rgba(255, 255, 255, 0.85);
+    --card-border: rgba(226, 232, 240, 0.9);
+    
+    /* Pastel Theme Color Tokens */
+    --pastel-blue: #93c5fd;
+    --pastel-blue-dark: #2563eb;
+    --pastel-blue-light: #eff6ff;
+    
+    --pastel-mint: #6ee7b7;
+    --pastel-mint-dark: #059669;
+    --pastel-mint-light: #ecfdf5;
+    
+    --pastel-rose: #fca5a5;
+    --pastel-rose-dark: #dc2626;
+    --pastel-rose-light: #fef2f2;
+    
+    --pastel-purple: #c4b5fd;
+    --pastel-purple-dark: #7c3aed;
+    --pastel-purple-light: #f5f3ff;
+    
+    --pastel-amber: #fde047;
+    --pastel-amber-dark: #d97706;
+    --pastel-amber-light: #fefce8;
+    
+    --pastel-peach: #fdba74;
+    --pastel-peach-dark: #ea580c;
+    --pastel-peach-light: #fff7ed;
+
+    --text-main: #1e293b;
+    --text-muted: #64748b;
+    --text-light: #94a3b8;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+}
+
+body {
+    background-color: var(--bg-pastel);
+    color: var(--text-main);
+    min-height: 100vh;
+    display: flex;
+    overflow-x: hidden;
+    background-image: 
+        radial-gradient(circle at 10% 10%, rgba(147, 197, 253, 0.25) 0%, transparent 40%),
+        radial-gradient(circle at 90% 90%, rgba(110, 231, 183, 0.2) 0%, transparent 40%),
+        radial-gradient(circle at 50% 50%, rgba(196, 181, 253, 0.15) 0%, transparent 60%);
+    background-attachment: fixed;
+}
+
+.mono {
+    font-family: 'JetBrains Mono', monospace;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: rgba(0, 0, 0, 0.03); }
+::-webkit-scrollbar-thumb { background: rgba(148, 163, 184, 0.3); border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: var(--pastel-blue-dark); }
+
+/* Glassmorphism Cards */
+.glass-card {
+    background: var(--card-bg);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid var(--card-border);
+    border-radius: 20px;
+    box-shadow: 0 10px 30px -5px rgba(148, 163, 184, 0.12);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.glass-card:hover {
+    box-shadow: 0 15px 35px -5px rgba(148, 163, 184, 0.2);
+}
+
+/* Sidebar Styling */
+aside {
+    width: 280px;
+    background: rgba(255, 255, 255, 0.9);
+    backdrop-filter: blur(20px);
+    border-right: 1px solid var(--card-border);
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    position: sticky;
+    top: 0;
+    z-index: 40;
+}
+
+.logo-area {
+    padding: 24px;
+    border-bottom: 1px solid var(--card-border);
+}
+
+.nav-link {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 20px;
+    margin: 4px 12px;
+    border-radius: 14px;
+    color: var(--text-muted);
+    font-weight: 600;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    background: transparent;
+    border: none;
+    width: calc(100% - 24px);
+    text-align: left;
+}
+
+.nav-link:hover {
+    color: var(--text-main);
+    background: rgba(241, 245, 249, 0.8);
+}
+
+.nav-link.active {
+    color: var(--pastel-blue-dark);
+    background: var(--pastel-blue-light);
+    border: 1px solid rgba(147, 197, 253, 0.6);
+    box-shadow: 0 4px 15px rgba(147, 197, 253, 0.3);
+}
+
+.nav-link.active i {
+    color: var(--pastel-blue-dark);
+}
+
+/* Main Area */
+main {
+    flex: 1;
+    padding: 32px;
+    overflow-y: auto;
+    max-width: 1400px;
+}
+
+/* Top Header */
+.top-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 28px;
+    flex-wrap: wrap;
+    gap: 16px;
+}
+
+.badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.badge-mint {
+    background: var(--pastel-mint-light);
+    color: var(--pastel-mint-dark);
+    border: 1px solid rgba(110, 231, 183, 0.6);
+}
+
+.badge-rose {
+    background: var(--pastel-rose-light);
+    color: var(--pastel-rose-dark);
+    border: 1px solid rgba(252, 165, 165, 0.6);
+}
+
+.badge-blue {
+    background: var(--pastel-blue-light);
+    color: var(--pastel-blue-dark);
+    border: 1px solid rgba(147, 197, 253, 0.6);
+}
+
+.badge-amber {
+    background: var(--pastel-amber-light);
+    color: var(--pastel-amber-dark);
+    border: 1px solid rgba(253, 224, 71, 0.6);
+}
+
+.badge-purple {
+    background: var(--pastel-purple-light);
+    color: var(--pastel-purple-dark);
+    border: 1px solid rgba(196, 181, 253, 0.6);
+}
+
+/* Status Cards Grid */
+.stat-card {
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    border-radius: 20px;
+    transition: all 0.2s ease;
+}
+
+.stat-value {
+    font-size: 2.2rem;
+    font-weight: 800;
+    margin-top: 8px;
+    color: var(--text-main);
+}
+
+/* Buttons & Inputs */
+.btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 12px 20px;
+    border-radius: 12px;
+    font-weight: 700;
+    font-size: 0.875rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: none;
+    outline: none;
+}
+
+.btn-primary {
+    background: #60a5fa;
+    color: #fff;
+    box-shadow: 0 4px 14px rgba(96, 165, 250, 0.35);
+}
+.btn-primary:hover {
+    background: #3b82f6;
+    transform: translateY(-1px);
+}
+
+.btn-success {
+    background: #34d399;
+    color: #fff;
+    box-shadow: 0 4px 14px rgba(52, 211, 153, 0.35);
+}
+.btn-success:hover {
+    background: #10b981;
+    transform: translateY(-1px);
+}
+
+.btn-danger {
+    background: #f87171;
+    color: #fff;
+    box-shadow: 0 4px 14px rgba(248, 113, 113, 0.35);
+}
+.btn-danger:hover {
+    background: #ef4444;
+    transform: translateY(-1px);
+}
+
+.btn-secondary {
+    background: #f1f5f9;
+    color: var(--text-main);
+    border: 1px solid var(--card-border);
+}
+.btn-secondary:hover {
+    background: #e2e8f0;
+}
+
+.btn-purple {
+    background: #a78bfa;
+    color: #fff;
+    box-shadow: 0 4px 14px rgba(167, 139, 250, 0.35);
+}
+.btn-purple:hover {
+    background: #8b5cf6;
+    transform: translateY(-1px);
+}
+
+.form-input, .form-select {
+    width: 100%;
+    padding: 12px 16px;
+    background: #fff;
+    border: 1px solid var(--card-border);
+    border-radius: 12px;
+    color: var(--text-main);
+    font-size: 0.9rem;
+    transition: all 0.2s ease;
+}
+
+.form-input:focus, .form-select:focus {
+    border-color: var(--pastel-blue-dark);
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(147, 197, 253, 0.4);
+}
+
+/* Tables */
+.custom-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+}
+.custom-table th {
+    padding: 14px 16px;
+    background: #f8fafc;
+    color: var(--text-muted);
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    text-align: left;
+    border-bottom: 1px solid var(--card-border);
+}
+.custom-table td {
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--card-border);
+    background: #fff;
+}
+.custom-table tr:hover td {
+    background: #f8fafc;
+}
+
+/* Modal Overlay */
+.modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.6);
+    backdrop-filter: blur(12px);
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+}
+.modal-overlay.show {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+/* Grid Layouts */
+.grid-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 24px; }
+.grid-3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 24px; }
+.grid-4 { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; }
+
+/* Toast Notifications */
+#toast-container {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    z-index: 120;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+.toast {
+    padding: 12px 20px;
+    border-radius: 12px;
+    background: #fff;
+    border: 1px solid var(--card-border);
+    color: var(--text-main);
+    box-shadow: 0 10px 25px rgba(148, 163, 184, 0.25);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    animation: slideIn 0.3s ease;
+}
+@keyframes slideIn {
+    from { transform: translateX(100%); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+}
+</style>
+</head>
+<body>
+
+<!-- SIDEBAR NAVIGATION -->
+<aside>
+    <div class="logo-area">
+        <div style="display: flex; align-items: center; gap: 12px;">
+            <div style="width: 44px; height: 44px; border-radius: 14px; background: linear-gradient(135deg, #93c5fd 0%, #c4b5fd 100%); display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(147, 197, 253, 0.4);">
+                <i class="fa-solid fa-elevator text-white style='font-size: 1.2rem;'"></i>
+            </div>
+            <div>
+                <h2 style="font-size: 1.15rem; font-weight: 800; color: var(--text-main);">Next Elevator</h2>
+                <p style="font-size: 0.72rem; color: var(--text-muted); font-weight: 600;" class="mono">Elevator Controller</p>
+            </div>
+        </div>
+    </div>
+
+    <nav style="flex: 1; padding: 16px 0;">
+        <button onclick="switchTab('dashboard')" id="nav-dashboard" class="nav-link active">
+            <i class="fa-solid fa-gauge-high"></i> Dashboard & Status
+        </button>
+        <button onclick="switchTab('network')" id="nav-network" class="nav-link">
+            <i class="fa-solid fa-wifi"></i> Network & Wi-Fi
+        </button>
+        <button onclick="switchTab('modbus')" id="nav-modbus" class="nav-link">
+            <i class="fa-solid fa-network-wired"></i> Modbus Registers
+        </button>
+    </nav>
+
+    <!-- System Quick Info Footer -->
+    <div style="padding: 20px; border-top: 1px solid var(--card-border); background: rgba(255,255,255,0.4);">
+        <div style="display: flex; justify-content: space-between; font-size: 0.75rem; color: var(--text-muted); margin-bottom: 6px;">
+            <span>MCU Bridge:</span>
+            <span id="sidebar-bridge-status" class="mono text-emerald-600" style="font-weight: 700;">CONNECTING...</span>
+        </div>
+        <div style="display: flex; justify-content: space-between; font-size: 0.75rem; color: var(--text-muted); margin-bottom: 6px;">
+            <span>Mission State:</span>
+            <span id="sidebar-mission-state" class="mono text-blue-600" style="font-weight: 700;">IDLE</span>
+        </div>
+        <div style="display: flex; justify-content: space-between; font-size: 0.75rem; color: var(--text-muted);">
+            <span>IP Address:</span>
+            <span id="sidebar-ip" class="mono text-blue-600" style="font-weight: 700;">0.0.0.0</span>
+        </div>
+    </div>
+</aside>
+
+<!-- MAIN CONTENT AREA -->
+<main>
+    <!-- TOP HEADER BAR -->
+    <div class="top-header">
+        <div>
+            <h1 style="font-size: 1.8rem; font-weight: 800; display: flex; align-items: center; gap: 12px; color: var(--text-main);">
+                Elevator Control Center
+                <span id="header-lift-badge" class="badge badge-blue mono">LIFT: -</span>
+            </h1>
+        </div>
+
+        <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+            <div id="mission-pill" class="badge badge-blue">
+                <span id="mission-pill-text">MISSION: IDLE</span>
+            </div>
+
+            <div id="bridge-pill" class="badge badge-mint">
+                <i class="fa-solid fa-circle-check"></i>
+                <span id="bridge-pill-text">MCU BRIDGE OK</span>
+            </div>
+
+            <!-- <button onclick="resetMcuBridge()" class="btn btn-secondary" style="font-size: 0.8rem; padding: 6px 14px; border-radius: 9999px; background: rgba(244, 63, 94, 0.1); border-color: rgba(244, 63, 94, 0.3); color: #e11d48; font-weight: 700;" title="Reset MCU Bridge Connection Error">
+                <i class="fa-solid fa-rotate-right"></i> Reset MCU Bridge
+            </button> -->
+        </div>
+    </div>
+
+    <!-- TAB 1: DASHBOARD & CONTROL -->
+    <div id="tab-dashboard" class="tab-content">
+        
+        <!-- PASTEL STATUS CARDS GRID -->
+        <div class="grid-4" style="margin-bottom: 24px;">
+            <!-- FLOOR CARD -->
+            <div class="glass-card stat-card" style="background: var(--pastel-blue-light); border-color: rgba(147, 197, 253, 0.5);">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <span style="font-size: 0.75rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase;">CURRENT FLOOR</span>
+                    <i class="fa-solid fa-layer-group text-blue-500" style="font-size: 1.2rem;"></i>
+                </div>
+                <div id="dash-floor-val" class="stat-value mono" style="color: var(--pastel-blue-dark);">1</div>
+                <div style="font-size: 0.75rem; color: var(--text-muted); font-weight: 600;">Station Floor Position</div>
+            </div>
+
+            <!-- DOOR STATUS CARD -->
+            <div class="glass-card stat-card" style="background: var(--pastel-mint-light); border-color: rgba(110, 231, 183, 0.5);">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <span style="font-size: 0.75rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase;">DOOR STATUS</span>
+                    <i class="fa-solid fa-door-open text-emerald-500" style="font-size: 1.2rem;"></i>
+                </div>
+                <div id="dash-door-val" class="stat-value mono" style="color: var(--pastel-mint-dark); font-size: 1.6rem;">CLOSED</div>
+                <div style="font-size: 0.75rem; color: var(--text-muted); font-weight: 600;">MCU Physical Door Feedback</div>
+            </div>
+
+            <!-- MISSION STATE CARD -->
+            <div class="glass-card stat-card" style="background: var(--pastel-purple-light); border-color: rgba(196, 181, 253, 0.5);">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <span style="font-size: 0.75rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase;">MISSION STATE</span>
+                    <i class="fa-solid fa-clock-rotate-left text-purple-500" style="font-size: 1.2rem;"></i>
+                </div>
+                <div id="dash-mission-val" class="stat-value mono" style="color: var(--pastel-purple-dark); font-size: 1.5rem;">IDLE (0)</div>
+                <div style="font-size: 0.75rem; color: var(--text-muted); font-weight: 600;">Sequence Controller State</div>
+            </div>
+
+            <!-- MCU BRIDGE CARD -->
+            <div class="glass-card stat-card" style="background: var(--pastel-rose-light); border-color: rgba(252, 165, 165, 0.5);">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <span style="font-size: 0.75rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase;">MCU BRIDGE</span>
+                    <i class="fa-solid fa-link text-rose-500" style="font-size: 1.2rem;"></i>
+                </div>
+                <div id="dash-bridge-val" class="stat-value mono" style="color: var(--pastel-rose-dark); font-size: 1.5rem;">ONLINE</div>
+                <div style="font-size: 0.75rem; color: var(--text-muted); font-weight: 600; margin-bottom: 8px;">Hardware Communication</div>
+                <button onclick="resetMcuBridge()" class="btn btn-secondary" style="padding: 6px 12px; font-size: 0.75rem; border-color: rgba(244, 63, 94, 0.4); color: #e11d48; font-weight: 700; width: 100%; border-radius: 10px;" title="Reset MCU Bridge Connection Error">
+                    <i class="fa-solid fa-rotate-right"></i> RESET MCU BRIDGE
+                </button>
+            </div>
+        </div>
+
+        <div class="grid-2" style="margin-bottom: 24px;">
+            <!-- QUICK SYSTEM CONFIGURATION & IDENTIFICATION -->
+            <div class="glass-card" style="padding: 24px; display: flex; flex-direction: column; justify-content: space-between;">
+                <div>
+                    <h3 style="font-size: 1.1rem; font-weight: 700; margin-bottom: 6px; display: flex; align-items: center; gap: 8px;">
+                        <i class="fa-solid fa-sliders text-purple-500"></i> Station & Robot Configuration
+                    </h3>
+                    <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 20px;">
+                        Configure station identification, robot IP, pulse count cycles, and LED brightness settings.
+                    </p>
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px;">
+                        <div>
+                            <label style="font-size: 0.8rem; color: var(--text-muted); display: block; margin-bottom: 6px; font-weight: 600;">
+                                <i class="fa-solid fa-elevator text-blue-500"></i> Elevator Side (Lift ID)
+                            </label>
+                            <select id="cfg-lift-id" class="form-input mono" onchange="applyLiftPreset(this.value)" style="background: white; font-weight: 700; cursor: pointer;">
+                                <option value="A">Lift A</option>
+                                <option value="B">Lift B</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label style="font-size: 0.8rem; color: var(--text-muted); display: block; margin-bottom: 6px; font-weight: 600;">
+                                <i class="fa-solid fa-building text-purple-500"></i> Station Floor
+                            </label>
+                            <input id="cfg-floor-name" type="text" class="form-input mono" placeholder="e.g. 1, 2, 3, 4">
+                        </div>
+                    </div>
+
+                    <div style="margin-bottom: 14px;">
+                        <label style="font-size: 0.8rem; color: var(--text-muted); display: block; margin-bottom: 6px; font-weight: 600;">
+                            <i class="fa-solid fa-robot text-emerald-500"></i> Robot Target IP Address
+                        </label>
+                        <input id="cfg-robot-ip" type="text" class="form-input mono" placeholder="192.168.20.42">
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 20px;">
+                        <div>
+                            <label style="font-size: 0.8rem; color: var(--text-muted); display: block; margin-bottom: 6px; font-weight: 600;">
+                                <i class="fa-solid fa-repeat text-amber-500"></i> Pulse Count (Cycles)
+                            </label>
+                            <input id="cfg-pulse-count" type="number" class="form-input mono" placeholder="5" min="1" max="50">
+                        </div>
+                        <div>
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                                <label style="font-size: 0.8rem; color: var(--text-muted); font-weight: 600;">
+                                    <i class="fa-solid fa-sun text-yellow-500"></i> LED Brightness (%)
+                                </label>
+                                <span id="cfg-brightness-val-disp" class="mono text-yellow-600" style="font-size: 0.8rem; font-weight: 700;">100%</span>
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                <input id="cfg-brightness" type="range" min="1" max="100" value="100" oninput="updateBrightnessDisp(this.value)" style="flex: 1; accent-color: #eab308; cursor: pointer; height: 8px;">
+                                <input id="cfg-brightness-num" type="number" class="form-input mono" min="1" max="100" value="100" onchange="updateBrightnessDisp(this.value)" style="width: 70px; text-align: center; padding: 6px;">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div style="display: flex; gap: 10px; margin-top: 10px;">
+                    <!-- <button onclick="resetMcuBridge()" class="btn btn-secondary" style="flex: 1; border-color: rgba(244, 63, 94, 0.4); color: #e11d48; font-weight: 700;" title="Reset MCU Bridge Connection Error">
+                        <i class="fa-solid fa-rotate-right"></i> RESET MCU BRIDGE
+                    </button> -->
+                    <button onclick="saveGeneralConfig()" class="btn btn-primary" style="flex: 1.5;">
+                        <i class="fa-solid fa-floppy-disk"></i> SAVE CONFIGURATION
+                    </button>
+                </div>
+            </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- TAB 2: COMBINED MODBUS REGISTERS (PORT 502 & PORT 1502) -->
+    <div id="tab-modbus" class="tab-content" style="display: none;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 12px;">
+            <div>
+                <h3 style="font-size: 1.25rem; font-weight: 800; color: var(--text-main);"><i class="fa-solid fa-network-wired text-blue-500"></i> Modbus TCP Register Mappings (Port 502 & Port 1502)</h3>
+                <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 4px;">
+                    Configure holding registers for Robot PLC Integration (Port 502) and Local Board Controller (Port 1502)
+                </p>
+            </div>
+            <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                <button onclick="applyLiftPreset('A')" class="btn btn-secondary" style="font-size: 0.8rem; background: var(--pastel-blue-light); border-color: rgba(147, 197, 253, 0.5);">
+                    <i class="fa-solid fa-building"></i> LIFT A PRESET (0, 1, 2, 3, 4, 5, 6, 7)
+                </button>
+                <button onclick="applyLiftPreset('B')" class="btn btn-secondary" style="font-size: 0.8rem; background: var(--pastel-purple-light); border-color: rgba(196, 181, 253, 0.5);">
+                    <i class="fa-solid fa-building"></i> LIFT B PRESET (10, 11, 12, 13, 14, 15, 16, 17)
+                </button>
+                <button onclick="saveGeneralConfig()" class="btn btn-success">
+                    <i class="fa-solid fa-check-circle"></i> SAVE ALL REGISTERS
+                </button>
+            </div>
+        </div>
+
+        <!-- SECTION 1: PORT 502 REGISTERS -->
+        <div class="glass-card" style="padding: 24px; margin-bottom: 24px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                <h4 style="font-size: 1.05rem; font-weight: 700; color: var(--text-main);"><i class="fa-solid fa-robot text-blue-500"></i> Robot Modbus TCP Holding Registers (Port 502)</h4>
+                <span class="badge badge-blue mono">PORT 502</span>
+            </div>
+            <div style="overflow-x: auto; border-radius: 16px; border: 1px solid var(--card-border);">
+                <table class="custom-table">
+                    <thead>
+                        <tr>
+                            <th>Register Key</th>
+                            <th>Description</th>
+                            <th>Access</th>
+                            <th style="width: 160px;">Address</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td class="mono text-blue-600" style="font-weight: 700;">floor</td>
+                            <td style="color: var(--text-muted); font-size: 0.85rem;">Current floor number reported to Robot when door is open</td>
+                            <td><span class="badge badge-blue">READ (ROBOT)</span></td>
+                            <td><input id="addr-502-floor" type="number" class="form-input mono" style="text-align: center;" value="10"></td>
+                        </tr>
+                        <tr>
+                            <td class="mono text-blue-600" style="font-weight: 700;">lift_status</td>
+                            <td style="color: var(--text-muted); font-size: 0.85rem;">Elevator status reported to Robot (1 = Ready, 2 = Busy)</td>
+                            <td><span class="badge badge-blue">READ (ROBOT)</span></td>
+                            <td><input id="addr-502-lift_status" type="number" class="form-input mono" style="text-align: center;" value="12"></td>
+                        </tr>
+                        <tr>
+                            <td class="mono text-blue-600" style="font-weight: 700;">door</td>
+                            <td style="color: var(--text-muted); font-size: 0.85rem;">Door status feedback to Robot (1 = Open, 2 = Closed)</td>
+                            <td><span class="badge badge-blue">READ (ROBOT)</span></td>
+                            <td><input id="addr-502-door" type="number" class="form-input mono" style="text-align: center;" value="14"></td>
+                        </tr>
+                        <tr>
+                            <td class="mono text-purple-600" style="font-weight: 700;">call_target</td>
+                            <td style="color: var(--text-muted); font-size: 0.85rem;">Target floor call register set by Robot (e.g. 1, 2, 3, 4)</td>
+                            <td><span class="badge badge-purple">WRITE (ROBOT) / READ</span></td>
+                            <td><input id="addr-502-call_target" type="number" class="form-input mono" style="text-align: center;" value="16"></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- SECTION 2: PORT 1502 REGISTERS -->
+        <div class="glass-card" style="padding: 24px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                <h4 style="font-size: 1.05rem; font-weight: 700; color: var(--text-main);"><i class="fa-solid fa-microchip text-purple-500"></i> Board Local Modbus TCP Holding Registers (Port 1502)</h4>
+                <span class="badge badge-purple mono">PORT 1502</span>
+            </div>
+            <div style="overflow-x: auto; border-radius: 16px; border: 1px solid var(--card-border);">
+                <table class="custom-table">
+                    <thead>
+                        <tr>
+                            <th>Register Key</th>
+                            <th>Description</th>
+                            <th>Access</th>
+                            <th style="width: 160px;">Address</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td class="mono text-blue-600" style="font-weight: 700;">floor</td>
+                            <td style="color: var(--text-muted); font-size: 0.85rem;">Local station floor configuration number</td>
+                            <td><span class="badge badge-blue">READ</span></td>
+                            <td><input id="addr-1502-floor" type="number" class="form-input mono" style="text-align: center;" value="10"></td>
+                        </tr>
+                        <tr>
+                            <td class="mono text-mint-600" style="font-weight: 700;">heartbeat</td>
+                            <td style="color: var(--text-muted); font-size: 0.85rem;">Communication counter pulse (0 - 65535)</td>
+                            <td><span class="badge badge-mint">READ</span></td>
+                            <td><input id="addr-1502-heartbeat" type="number" class="form-input mono" style="text-align: center;" value="11"></td>
+                        </tr>
+                        <tr>
+                            <td class="mono text-blue-600" style="font-weight: 700;">door</td>
+                            <td style="color: var(--text-muted); font-size: 0.85rem;">Local door sensor feedback state (1 = Open, 2 = Closed)</td>
+                            <td><span class="badge badge-blue">READ</span></td>
+                            <td><input id="addr-1502-door" type="number" class="form-input mono" style="text-align: center;" value="14"></td>
+                        </tr>
+                        <tr>
+                            <td class="mono text-amber-600" style="font-weight: 700;">command</td>
+                            <td style="color: var(--text-muted); font-size: 0.85rem;">Local manual relay command input (1=Up, 2=Down, 0=Stop, etc.)</td>
+                            <td><span class="badge badge-amber">READ / WRITE</span></td>
+                            <td><input id="addr-1502-command" type="number" class="form-input mono" style="text-align: center;" value="13"></td>
+                        </tr>
+                        <tr>
+                            <td class="mono text-purple-600" style="font-weight: 700;">led_target</td>
+                            <td style="color: var(--text-muted); font-size: 0.85rem;">WS2812 RGB Color code selection (1=Green, 2=Blue, 4=Red, 8=Pink, etc.)</td>
+                            <td><span class="badge badge-purple">READ / WRITE</span></td>
+                            <td><input id="addr-1502-led_target" type="number" class="form-input mono" style="text-align: center;" value="15"></td>
+                        </tr>
+                        <tr>
+                            <td class="mono text-purple-600" style="font-weight: 700;">led_bright</td>
+                            <td style="color: var(--text-muted); font-size: 0.85rem;">WS2812 RGB Brightness percentage (0 - 100%)</td>
+                            <td><span class="badge badge-purple">READ / WRITE</span></td>
+                            <td><input id="addr-1502-led_bright" type="number" class="form-input mono" style="text-align: center;" value="17"></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- TAB 3: NETWORK & WI-FI -->
+    <div id="tab-network" class="tab-content" style="display: none;">
+        <!-- NETWORK STATUS OVERVIEW CARDS -->
+        <div class="grid-4" style="margin-bottom: 24px;">
+            <div class="glass-card stat-card" style="background: var(--pastel-blue-light); border-color: rgba(147, 197, 253, 0.5);">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <span style="font-size: 0.75rem; color: var(--text-muted); font-weight: 700;">IP ADDRESS</span>
+                    <i class="fa-solid fa-network-wired text-blue-500" style="font-size: 1.2rem;"></i>
+                </div>
+                <div id="net-card-ip" class="stat-value mono" style="font-size: 1.5rem; color: var(--pastel-blue-dark);">0.0.0.0</div>
+                <div style="font-size: 0.75rem; color: var(--text-muted); font-weight: 600;">Active Network Interface IP</div>
+            </div>
+
+            <div class="glass-card stat-card" style="background: var(--pastel-purple-light); border-color: rgba(196, 181, 253, 0.5);">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <span style="font-size: 0.75rem; color: var(--text-muted); font-weight: 700;">MAC ADDRESS</span>
+                    <i class="fa-solid fa-fingerprint text-purple-500" style="font-size: 1.2rem;"></i>
+                </div>
+                <div id="net-card-mac" class="stat-value mono" style="font-size: 1.15rem; color: var(--pastel-purple-dark);">00:00:00:00:00:00</div>
+                <div style="font-size: 0.75rem; color: var(--text-muted); font-weight: 600;">Hardware Network MAC</div>
+            </div>
+
+            <div class="glass-card stat-card" style="background: var(--pastel-mint-light); border-color: rgba(110, 231, 183, 0.5);">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <span style="font-size: 0.75rem; color: var(--text-muted); font-weight: 700;">ADDRESSING MODE</span>
+                    <i class="fa-solid fa-sliders text-emerald-500" style="font-size: 1.2rem;"></i>
+                </div>
+                <div id="net-card-mode" class="stat-value mono" style="font-size: 1.5rem; color: var(--pastel-mint-dark);">DHCP</div>
+                <div style="font-size: 0.75rem; color: var(--text-muted); font-weight: 600;">IP Allocation Method</div>
+            </div>
+
+            <!-- <div class="glass-card stat-card" style="background: var(--pastel-peach-light); border-color: rgba(253, 186, 116, 0.5);">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <span style="font-size: 0.75rem; color: var(--text-muted); font-weight: 700;">MODBUS PORTS</span>
+                    <i class="fa-solid fa-server text-orange-500" style="font-size: 1.2rem;"></i>
+                </div>
+                <div class="stat-value mono" style="font-size: 1.3rem; color: var(--pastel-peach-dark);">502 & 1502</div>
+                <div style="font-size: 0.75rem; color: var(--text-muted); font-weight: 600;">Active Modbus TCP Servers</div>
+            </div> -->
+        </div>
+
+        <div class="grid-2">
+            <!-- IP & LAN CONFIGURATION PANEL -->
+            <div class="glass-card" style="padding: 24px; display: flex; flex-direction: column; justify-content: space-between;">
+                <div>
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                        <h3 style="font-size: 1.1rem; font-weight: 700; color: var(--text-main);"><i class="fa-solid fa-network-wired text-blue-500"></i> LAN & Static IP Settings</h3>
+                        <span id="net-mode-display" class="badge badge-blue mono">DHCP</span>
+                    </div>
+                    <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 20px;">
+                        Configure DHCP automatic IP or assign a fixed Static IP address.
+                    </p>
+
+                    <div style="margin-bottom: 16px;">
+                        <label style="font-size: 0.8rem; color: var(--text-muted); display: block; margin-bottom: 6px;">Addressing Protocol</label>
+                        <select id="net-mode-select" onchange="toggleStaticFields()" class="form-select">
+                            <option value="dhcp">DHCP (Automatic IP Allocation)</option>
+                            <option value="static">Static IP Configuration</option>
+                        </select>
+                    </div>
+
+                    <div id="static-fields" style="display: none; display: flex; flex-direction: column; gap: 14px; margin-top: 14px; padding: 16px; background: #fff; border-radius: 14px; border: 1px solid var(--card-border);">
+                        <div>
+                            <label style="font-size: 0.75rem; color: var(--text-muted); display: block; margin-bottom: 4px;">Static IP Address</label>
+                            <input id="net-static-ip" type="text" class="form-input mono" placeholder="192.168.20.100">
+                        </div>
+                        <div>
+                            <label style="font-size: 0.75rem; color: var(--text-muted); display: block; margin-bottom: 4px;">Gateway Address</label>
+                            <input id="net-gateway" type="text" class="form-input mono" placeholder="192.168.20.1">
+                        </div>
+                        <div>
+                            <label style="font-size: 0.75rem; color: var(--text-muted); display: block; margin-bottom: 4px;">Subnet Prefix (CIDR)</label>
+                            <input id="net-subnet" type="text" class="form-input mono" placeholder="24">
+                        </div>
+                    </div>
+                </div>
+
+                <button onclick="applyNetworkModeSettings()" class="btn btn-success" style="width: 100%; margin-top: 20px;">
+                    <i class="fa-solid fa-arrows-rotate"></i> APPLY NETWORK MODE
+                </button>
+            </div>
+
+            <!-- WI-FI & HOTSPOT MANAGEMENT PANEL -->
+            <div class="glass-card" style="padding: 24px; display: flex; flex-direction: column; justify-content: space-between;">
+                <div>
+                    <h3 style="font-size: 1.1rem; font-weight: 700; margin-bottom: 6px; color: var(--text-main);"><i class="fa-solid fa-wifi text-emerald-500"></i> Wi-Fi Router Connection</h3>
+                    <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 20px;">
+                        Connect board to local Wi-Fi router or switch network.
+                    </p>
+
+                    <div style="margin-bottom: 14px;">
+                        <label style="font-size: 0.8rem; color: var(--text-muted); display: block; margin-bottom: 6px;">Wi-Fi Network Name (SSID)</label>
+                        <input id="wifi-ssid" type="text" class="form-input mono" placeholder="e.g. Factory_WiFi_5G">
+                    </div>
+
+                    <div style="margin-bottom: 20px;">
+                        <label style="font-size: 0.8rem; color: var(--text-muted); display: block; margin-bottom: 6px;">WPA2 Password</label>
+                        <div style="position: relative;">
+                            <input id="wifi-password" type="password" class="form-input mono" placeholder="••••••••" style="padding-right: 80px;">
+                            <button onclick="togglePasswordVisibility()" id="btn-toggle-pw" type="button" style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); background: none; border: none; color: var(--pastel-blue-dark); font-size: 0.75rem; font-weight: 700; cursor: pointer;">
+                                SHOW
+                            </button>
+                        </div>
+                    </div>
+
+                    <button onclick="connectWiFi()" class="btn btn-primary" style="width: 100%; margin-bottom: 12px;">
+                        <i class="fa-solid fa-plug"></i> CONNECT TO WI-FI
+                    </button>
+                </div>
+
+                <div style="border-top: 1px solid var(--card-border); padding-top: 16px; margin-top: 16px;">
+                    <label style="font-size: 0.75rem; color: var(--pastel-rose-dark); font-weight: 700; text-transform: uppercase; display: block; margin-bottom: 8px;">
+                        Emergency Hotspot Recovery
+                    </label>
+                    <button onclick="resetToHotspotMode()" id="btn-reset-hotspot" class="btn btn-danger" style="width: 100%;">
+                        <i class="fa-solid fa-triangle-exclamation"></i> RESET TO HOTSPOT
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- TAB 5: DIAGNOSTICS & API -->
+    <!-- <div id="tab-diagnostics" class="tab-content" style="display: none;">
+        <div class="glass-card" style="padding: 24px;">
+            <h3 style="font-size: 1.1rem; font-weight: 700; margin-bottom: 16px;"><i class="fa-solid fa-code text-purple-500"></i> System Hardware & API Diagnostics</h3>
+            
+            <div class="grid-4" style="margin-bottom: 24px;">
+                <div style="background: #fff; padding: 16px; border-radius: 14px; border: 1px solid var(--card-border);">
+                    <div style="font-size: 0.75rem; color: var(--text-muted); font-weight: 700;">IP ADDRESS</div>
+                    <div id="diag-ip" class="mono text-blue-600" style="font-size: 1.1rem; font-weight: 800; margin-top: 4px;">0.0.0.0</div>
+                </div>
+                <div style="background: #fff; padding: 16px; border-radius: 14px; border: 1px solid var(--card-border);">
+                    <div style="font-size: 0.75rem; color: var(--text-muted); font-weight: 700;">MAC ADDRESS</div>
+                    <div id="diag-mac" class="mono text-purple-600" style="font-size: 0.9rem; font-weight: 800; margin-top: 4px;">00:00:00:00:00:00</div>
+                </div>
+                <div style="background: #fff; padding: 16px; border-radius: 14px; border: 1px solid var(--card-border);">
+                    <div style="font-size: 0.75rem; color: var(--text-muted); font-weight: 700;">UNIX DOMAIN SOCKET</div>
+                    <div class="mono text-emerald-600" style="font-size: 0.75rem; font-weight: 700; margin-top: 4px;">/var/run/arduino-router.sock</div>
+                </div>
+                <div style="background: #fff; padding: 16px; border-radius: 14px; border: 1px solid var(--card-border);">
+                    <div style="font-size: 0.75rem; color: var(--text-muted); font-weight: 700;">MODBUS TCP PORTS</div>
+                    <div class="mono text-amber-600" style="font-size: 0.9rem; font-weight: 800; margin-top: 4px;">502 (Robot) | 1502 (Local)</div>
+                </div>
+            </div>
+
+            <h4 style="font-size: 0.95rem; font-weight: 700; margin-bottom: 12px; color: var(--text-muted);">Available REST API Endpoints</h4>
+            <div style="background: #fff; padding: 16px; border-radius: 14px; border: 1px solid var(--card-border);" class="mono">
+                <div style="margin-bottom: 8px;"><span class="badge badge-mint">GET</span> <span class="text-blue-600">/status</span> - JSON telemetry, mission status & register maps</div>
+                <div style="margin-bottom: 8px;"><span class="badge badge-rose">POST</span> <span class="text-blue-600">/command</span> - Body: {"action": "1"} (0=Stop, 1=Up, 2=Down, 3=UpLED, 4=DownLED, 5=Release, 6=Clear)</div>
+                <div style="margin-bottom: 8px;"><span class="badge badge-rose">POST</span> <span class="text-blue-600">/save_config</span> - Body: {"lift_id": "A", "floor_name": "1", "pulse_count": 5, "addr": {...}}</div>
+                <div style="margin-bottom: 8px;"><span class="badge badge-rose">POST</span> <span class="text-blue-600">/set_network_mode</span> - Body: {"mode": "dhcp"|"static", "static_ip": "..."}</div>
+                <div><span class="badge badge-rose">POST</span> <span class="text-blue-600">/change_wifi</span> - Body: {"ssid": "...", "password": "..."}</div>
+            </div>
+        </div>
+    </div> -->
+</main>
+
+<!-- COUNTDOWN OVERLAY MODAL FOR NETWORK APPLY -->
+<div id="loading-overlay" class="modal-overlay">
+    <div class="glass-card" style="padding: 40px; text-align: center; max-width: 440px; width: 90%;">
+        <i class="fa-solid fa-circle-notch fa-spin text-blue-500" style="font-size: 3rem; margin-bottom: 20px;"></i>
+        <h2 id="loading-title" style="font-size: 1.4rem; font-weight: 800; margin-bottom: 8px; color: var(--text-main);">Applying Network Settings...</h2>
+        <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 24px;">
+            The network configuration is being modified. Reconnecting in...
+        </p>
+        <div id="countdown-val" class="mono" style="font-size: 3.5rem; font-weight: 900; color: var(--pastel-blue-dark);">20</div>
+    </div>
+</div>
+
+<!-- TOAST CONTAINER -->
+<div id="toast-container"></div>
+
+<!-- JAVASCRIPT LOGIC -->
+<script>
+let isConfigLoaded = false;
+
+// Element Helper
+const el = (id) => document.getElementById(id);
+
+// Toast Notification
+function showToast(msg, type = 'success') {
+    const container = el('toast-container');
+    const toast = document.createElement('div');
+    toast.className = 'toast';
+    const icon = type === 'success' ? 'fa-circle-check text-emerald-600' : 'fa-circle-exclamation text-rose-500';
+    toast.innerHTML = `<i class="fa-solid ${icon} text-lg"></i> <span>${msg}</span>`;
+    container.appendChild(toast);
+    setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transform = 'translateX(100%)';
+        setTimeout(() => toast.remove(), 300);
+    }, 3000);
+}
+
+// Tab Switching
+function switchTab(tabId) {
+    document.querySelectorAll('.tab-content').forEach(t => t.style.display = 'none');
+    document.querySelectorAll('.nav-link').forEach(n => n.classList.remove('active'));
+    
+    el('tab-' + tabId).style.display = 'block';
+    el('nav-' + tabId).classList.add('active');
+}
+
+// Toggle Password Visibility
+function togglePasswordVisibility() {
+    const input = el('wifi-password');
+    const btn = el('btn-toggle-pw');
+    if (input.type === 'password') {
+        input.type = 'text';
+        btn.innerText = 'HIDE';
+    } else {
+        input.type = 'password';
+        btn.innerText = 'SHOW';
+    }
+}
+
+// Toggle Static IP Form Fields
+function toggleStaticFields() {
+    const mode = el('net-mode-select').value;
+    el('static-fields').style.display = mode === 'static' ? 'flex' : 'none';
+}
+
+// Send RPC Solenoid / Motion Command
+function sendWebCommand(actionCode) {
+    el('last-rpc-result').innerText = 'SENDING...';
+    fetch('/command', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: actionCode })
+    })
+    .then(r => r.json())
+    .then(data => {
+        el('last-rpc-result').innerText = data.result || 'OK';
+        showToast(`Command ${actionCode} executed: ${data.result}`);
+    })
+    .catch(err => {
+        console.error("Command error:", err);
+        el('last-rpc-result').innerText = 'ERROR';
+        showToast("Failed to execute command", "error");
+    });
+}
+
+// Poll Status from Backend
+function pollStatus() {
+    fetch('/status')
+    .then(r => r.json())
+    .then(data => {
+        if (!data) return;
+
+        // Bridge & IP status
+        const isOk = data.arduino && data.arduino.is_bridge_ok;
+        const bridgePill = el('bridge-pill');
+        const bridgeText = el('bridge-pill-text');
+        
+        if (isOk) {
+            bridgePill.className = 'badge badge-mint';
+            bridgeText.innerText = 'MCU BRIDGE OK';
+            el('sidebar-bridge-status').innerText = 'ONLINE';
+            el('sidebar-bridge-status').className = 'mono text-emerald-600';
+            if (el('dash-bridge-val')) {
+                el('dash-bridge-val').innerText = 'ONLINE';
+                el('dash-bridge-val').style.color = 'var(--pastel-mint-dark)';
+            }
+        } else {
+            bridgePill.className = 'badge badge-rose';
+            bridgeText.innerText = 'MCU DISCONNECTED';
+            el('sidebar-bridge-status').innerText = 'OFFLINE';
+            el('sidebar-bridge-status').className = 'mono text-rose-500';
+            if (el('dash-bridge-val')) {
+                el('dash-bridge-val').innerText = 'OFFLINE';
+                el('dash-bridge-val').style.color = 'var(--pastel-rose-dark)';
+            }
+        }
+
+        // Mission State & Busy status
+        const stateMap = {
+            0: "IDLE", 1: "MOVING", 2: "ARRIVED",
+            3: "PULSING", 4: "DONE", 5: "ERROR"
+        };
+        const mState = data.mission_state !== undefined ? data.mission_state : 0;
+        const mStateText = stateMap[mState] || "IDLE";
+
+        el('sidebar-mission-state').innerText = `${mStateText} (${mState})`;
+        el('dash-mission-val').innerText = `${mStateText} (${mState})`;
+
+        const missionPill = el('mission-pill');
+        const missionPillText = el('mission-pill-text');
+        missionPillText.innerText = `MISSION: ${mStateText}`;
+        if (mState === 0) missionPill.className = 'badge badge-blue';
+        else if (mState === 1 || mState === 2) missionPill.className = 'badge badge-amber';
+        else if (mState === 3) missionPill.className = 'badge badge-purple';
+        else if (mState === 4) missionPill.className = 'badge badge-mint';
+        else if (mState === 5) missionPill.className = 'badge badge-rose';
+
+        // IP, MAC & Network Mode
+        const currentIp = data.ip || '0.0.0.0';
+        const currentMac = data.mac || '00:00:00:00:00:00';
+        const currentNetMode = (data.network_mode || 'dhcp').toUpperCase();
+
+        el('sidebar-ip').innerText = currentIp;
+        if (el('net-card-ip')) el('net-card-ip').innerText = currentIp;
+        if (el('net-card-mac')) el('net-card-mac').innerText = currentMac;
+        if (el('net-card-mode')) el('net-card-mode').innerText = currentNetMode;
+
+        if (data.hotspot_ssid) {
+            currentHotspotSSID = data.hotspot_ssid;
+            if (el('btn-reset-hotspot')) {
+                el('btn-reset-hotspot').innerHTML = `<i class="fa-solid fa-triangle-exclamation"></i> RESET TO '${currentHotspotSSID}'`;
+            }
+        }
+
+        // Door State & Elevator Telemetry
+        const doorStatus = (data.arduino && data.arduino.door) ? data.arduino.door.toUpperCase() : 'CLOSED';
+        el('dash-door-val').innerText = doorStatus;
+        el('dash-door-val').style.color = doorStatus.includes('OPEN') ? 'var(--pastel-rose-dark)' : 'var(--pastel-mint-dark)';
+
+        const currentFloor = data.floor || '1';
+        el('dash-floor-val').innerText = currentFloor;
+        el('header-lift-badge').innerText = `LIFT: ${data.lift_id || 'A'}`;
+
+        const pCount = (data.settings && data.settings.pulse_count) || data.pulse_count || 5;
+        el('dash-pulse-val').innerText = pCount;
+
+        // Heartbeat
+        if (data.arduino && data.arduino.heartbeat !== undefined) {
+            el('header-heartbeat').innerText = data.arduino.heartbeat;
+        } else {
+            el('header-heartbeat').innerText = (parseInt(el('header-heartbeat').innerText || "0") + 1) % 65535;
+        }
+
+        // Fill form fields on initial load
+        if (!isConfigLoaded) {
+            el('cfg-lift-id').value = data.lift_id || 'A';
+            el('cfg-floor-name').value = data.floor || '1';
+            if (el('cfg-robot-ip')) el('cfg-robot-ip').value = data.robot_ip || '192.168.20.42';
+            if (el('cfg-pulse-count')) el('cfg-pulse-count').value = pCount;
+            const brVal = data.brightness || (data.settings && data.settings.brightness) || 100;
+            updateBrightnessDisp(brVal);
+            
+            if (data.network_mode) {
+                el('net-mode-select').value = data.network_mode;
+                el('net-mode-display').innerText = data.network_mode.toUpperCase();
+                toggleStaticFields();
+            }
+
+            // Populate Port 502 & Port 1502 register inputs
+            const addr = data.addr || {};
+            const p502 = addr.robot_port_502 || addr;
+            const p1502 = addr.board_port_1502 || addr;
+
+            const getRegVal = (obj, key, def) => (obj && obj[key] !== undefined && obj[key] !== null) ? obj[key] : def;
+            const isLiftB = (data.lift_id || 'A').toUpperCase() === 'B';
+            const offset = isLiftB ? 10 : 0;
+
+            if (el('addr-502-floor')) el('addr-502-floor').value = getRegVal(p502, 'floor', 0 + offset);
+            if (el('addr-502-lift_status')) el('addr-502-lift_status').value = getRegVal(p502, 'lift_status', 2 + offset);
+            if (el('addr-502-door')) el('addr-502-door').value = getRegVal(p502, 'door', 4 + offset);
+            if (el('addr-502-call_target')) el('addr-502-call_target').value = getRegVal(p502, 'call_target', 6 + offset);
+
+            if (el('addr-1502-floor')) el('addr-1502-floor').value = getRegVal(p1502, 'floor', 0 + offset);
+            if (el('addr-1502-heartbeat')) el('addr-1502-heartbeat').value = getRegVal(p1502, 'heartbeat', 1 + offset);
+            if (el('addr-1502-lift_status')) el('addr-1502-lift_status').value = getRegVal(p1502, 'lift_status', 2 + offset);
+            if (el('addr-1502-door')) el('addr-1502-door').value = getRegVal(p1502, 'door', 4 + offset);
+            if (el('addr-1502-command')) el('addr-1502-command').value = getRegVal(p1502, 'command', 3 + offset);
+            if (el('addr-1502-led_target')) el('addr-1502-led_target').value = getRegVal(p1502, 'led_target', 5 + offset);
+            if (el('addr-1502-led_bright')) el('addr-1502-led_bright').value = getRegVal(p1502, 'led_bright', 7 + offset);
+
+            isConfigLoaded = true;
+        }
+    })
+    .catch(err => console.error("Poll status error:", err))
+    .finally(() => setTimeout(pollStatus, 1000));
+}
+
+// Apply Lift A or Lift B Presets dynamically
+function applyLiftPreset(liftId) {
+    const id = (liftId || 'A').toUpperCase();
+    if (el('cfg-lift-id')) el('cfg-lift-id').value = id;
+
+    if (id === 'B') {
+        // Lift B Preset (Offset 10): 10, 11, 12, 13, 14, 15, 16, 17
+        if (el('addr-502-floor')) el('addr-502-floor').value = 10;
+        if (el('addr-502-lift_status')) el('addr-502-lift_status').value = 12;
+        if (el('addr-502-door')) el('addr-502-door').value = 14;
+        if (el('addr-502-call_target')) el('addr-502-call_target').value = 16;
+
+        if (el('addr-1502-floor')) el('addr-1502-floor').value = 10;
+        if (el('addr-1502-heartbeat')) el('addr-1502-heartbeat').value = 11;
+        if (el('addr-1502-lift_status')) el('addr-1502-lift_status').value = 12;
+        if (el('addr-1502-door')) el('addr-1502-door').value = 14;
+        if (el('addr-1502-command')) el('addr-1502-command').value = 13;
+        if (el('addr-1502-led_target')) el('addr-1502-led_target').value = 15;
+        if (el('addr-1502-led_bright')) el('addr-1502-led_bright').value = 17;
+
+        showToast("Applied register presets for Lift B (10, 11, 12, 13, 14, 15, 16, 17)");
+    } else {
+        // Lift A Preset (Offset 0): 0, 1, 2, 3, 4, 5, 6, 7
+        if (el('addr-502-floor')) el('addr-502-floor').value = 0;
+        if (el('addr-502-lift_status')) el('addr-502-lift_status').value = 2;
+        if (el('addr-502-door')) el('addr-502-door').value = 4;
+        if (el('addr-502-call_target')) el('addr-502-call_target').value = 6;
+
+        if (el('addr-1502-floor')) el('addr-1502-floor').value = 0;
+        if (el('addr-1502-heartbeat')) el('addr-1502-heartbeat').value = 1;
+        if (el('addr-1502-lift_status')) el('addr-1502-lift_status').value = 2;
+        if (el('addr-1502-door')) el('addr-1502-door').value = 4;
+        if (el('addr-1502-command')) el('addr-1502-command').value = 3;
+        if (el('addr-1502-led_target')) el('addr-1502-led_target').value = 5;
+        if (el('addr-1502-led_bright')) el('addr-1502-led_bright').value = 7;
+
+        showToast("Applied register presets for Lift A (0, 1, 2, 3, 4, 5, 6, 7)");
+    }
+}
+
+// Helper to safely parse integer from input
+function getFormInt(id, defVal) {
+    const elem = el(id);
+    if (!elem || elem.value === "" || elem.value === null || elem.value === undefined) return defVal;
+    const parsed = parseInt(elem.value, 10);
+    return isNaN(parsed) ? defVal : parsed;
+}
+
+// Real-time LED Brightness Slider Sync
+function updateBrightnessDisp(val) {
+    const clamped = Math.max(1, Math.min(100, parseInt(val, 10) || 100));
+    if (el('cfg-brightness-val-disp')) el('cfg-brightness-val-disp').innerText = clamped + '%';
+    if (el('cfg-brightness-num')) el('cfg-brightness-num').value = clamped;
+    if (el('cfg-brightness')) el('cfg-brightness').value = clamped;
+}
+
+// Reset MCU Bridge state & connection
+function resetMcuBridge() {
+    showToast("Resetting MCU Bridge...", "info");
+    fetch('/reset_bridge', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.bridge_ok) {
+            showToast("MCU Bridge Reset Successful! Connection OK.", "success");
+        } else {
+            showToast("MCU Bridge Reset Command Sent! Retrying connection...", "warning");
+        }
+        isConfigLoaded = false;
+    })
+    .catch(err => {
+        console.error("Reset bridge error:", err);
+        showToast("Failed to reset MCU Bridge", "error");
+    });
+}
+
+// Save General & Modbus Register Configuration
+function saveGeneralConfig() {
+    const p502Obj = {
+        floor: getFormInt('addr-502-floor', 10),
+        lift_status: getFormInt('addr-502-lift_status', 12),
+        door: getFormInt('addr-502-door', 14),
+        call_target: getFormInt('addr-502-call_target', 16)
+    };
+
+    const p1502Obj = {
+        floor: getFormInt('addr-1502-floor', 10),
+        heartbeat: getFormInt('addr-1502-heartbeat', 11),
+        lift_status: getFormInt('addr-1502-lift_status', 12),
+        door: getFormInt('addr-1502-door', 14),
+        command: getFormInt('addr-1502-command', 13),
+        led_target: getFormInt('addr-1502-led_target', 15),
+        led_bright: getFormInt('addr-1502-led_bright', 17)
+    };
+
+    const brightVal = getFormInt('cfg-brightness', 100);
+
+    const payload = {
+        lift_id: (el('cfg-lift-id') && el('cfg-lift-id').value) ? el('cfg-lift-id').value.trim().toUpperCase() : 'A',
+        floor_name: (el('cfg-floor-name') && el('cfg-floor-name').value) ? el('cfg-floor-name').value.trim() : '1',
+        robot_ip: (el('cfg-robot-ip') && el('cfg-robot-ip').value) ? el('cfg-robot-ip').value.trim() : '192.168.20.42',
+        pulse_count: getFormInt('cfg-pulse-count', 5),
+        brightness: brightVal,
+        settings: {
+            brightness: brightVal,
+            pulse_count: getFormInt('cfg-pulse-count', 5)
+        },
+        addr: {
+            robot_port_502: p502Obj,
+            board_port_1502: p1502Obj
+        }
+    };
+
+    fetch('/save_config', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+    })
+    .then(r => r.json())
+    .then(data => {
+        showToast("Configuration Saved Successfully!");
+        isConfigLoaded = false; // Reset to reload values on next poll tick
+    })
+    .catch(err => {
+        console.error("Save config error:", err);
+        showToast("Failed to save configuration", "error");
+    });
+}
+
+// Apply Network Mode (DHCP / Static)
+function applyNetworkModeSettings() {
+    const overlay = el('loading-overlay');
+    const countVal = el('countdown-val');
+    overlay.classList.add('show');
+
+    let count = 20;
+    countVal.innerText = count;
+    const timer = setInterval(() => {
+        count--;
+        countVal.innerText = count;
+        if (count <= 0) {
+            clearInterval(timer);
+            overlay.classList.remove('show');
+        }
+    }, 1000);
+
+    const payload = {
+        mode: el('net-mode-select').value,
+        static_ip: el('net-static-ip').value,
+        gateway: el('net-gateway').value,
+        subnet: el('net-subnet').value || "24"
+    };
+
+    fetch('/set_network_mode', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+    })
+    .then(r => r.json())
+    .then(() => showToast("Network mode updated"))
+    .catch(err => console.error("Error network mode:", err));
+}
+
+// Connect to Wi-Fi
+function connectWiFi() {
+    const ssid = el('wifi-ssid').value;
+    const pw = el('wifi-password').value;
+    if (!ssid) {
+        showToast("Please enter Wi-Fi SSID", "error");
+        return;
+    }
+
+    showToast(`Attempting connection to ${ssid}...`);
+    fetch('/change_wifi', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ssid: ssid, password: pw })
+    })
+    .then(r => r.json())
+    .then(data => {
+        showToast(`Switching Wi-Fi to ${ssid}. Board IP may change.`);
+    })
+    .catch(err => {
+        console.error("WiFi error:", err);
+        showToast("Failed to switch Wi-Fi", "error");
+    });
+}
+
+// Reset to Hotspot Mode
+let currentHotspotSSID = "NextElevator_AP";
+
+function resetToHotspotMode() {
+    if (confirm(`Reset to Hotspot mode? This will broadcast Wi-Fi '${currentHotspotSSID}'.`)) {
+        fetch('/reset_to_hotspot', { method: 'POST' })
+        .then(() => showToast(`Hotspot mode activated! Connect to '${currentHotspotSSID}'.`))
+        .catch(err => console.error("Hotspot reset error:", err));
+    }
+}
+
+// Start Status Polling
+pollStatus();
+</script>
+
+</body>
+</html>
