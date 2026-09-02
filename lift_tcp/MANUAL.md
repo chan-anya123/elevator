@@ -1,12 +1,12 @@
-# Arduino UNO Q Elevator Controller (`main2.py`) - System Manual
+# Arduino UNO Q Elevator Controller (`main.py`) - System Manual
 
-This document provides a comprehensive operational and technical manual for the Arduino UNO Q Elevator Controller application implemented in [`main2.py`](file:///home/cookies/lift/arduino_uno_q/main2.py).
+This document provides a comprehensive operational and technical manual for the Arduino UNO Q Elevator Controller application implemented in [`main.py`](main.py).
 
 ---
 
 ## 1. System Overview & Architecture
 
-`main2.py` implements a **Dual-Modbus Bridge Architecture** designed to interface an MPU (Linux Host) with an MCU (Arduino + Zephyr RTOS) and an Autonomous Mobile Robot (AMR / AGV) or Central Elevator Controller.
+`main.py` implements a **Dual-Modbus Bridge Architecture** designed to interface an MPU (Linux Host) with an MCU (Arduino + Zephyr RTOS) and an Autonomous Mobile Robot (AMR / AGV) or Central Elevator Controller.
 
 ```text
                +---------------------------------------------------+
@@ -16,7 +16,7 @@ This document provides a comprehensive operational and technical manual for the 
                                          | Modbus TCP (Port 502)
                                          v
 +---------------------------------------------------------------------------------+
-| MPU Layer (Flask & Python Engine - main2.py)                                     |
+| MPU Layer (Flask & Python Engine - main.py)                                      |
 |                                                                                 |
 |  +---------------------------+       +---------------------------------------+  |
 |  | Modbus Client (Port 502)  |       | Modbus Server (Port 1502)             |  |
@@ -389,7 +389,7 @@ Resets the MCU bridge socket connection and tests communication status.
 
 ## 7. MessagePack RPC Interface
 
-Communication between `main2.py` (MPU) and the Arduino firmware (MCU) uses a MessagePack-encoded TCP stream over the UNIX domain socket `/var/run/arduino-router.sock`.
+Communication between `main.py` (MPU) and the Arduino firmware (MCU) uses a MessagePack-encoded TCP stream over the UNIX domain socket `/var/run/arduino-router.sock`.
 
 ### 7.1 Message Format
 ```python

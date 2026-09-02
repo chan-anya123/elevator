@@ -12,7 +12,11 @@ from pyModbusTCP.server import ModbusServer
 from pyModbusTCP.client import ModbusClient
 import shlex
 from enum import IntEnum
-from zeroconf import Zeroconf, ServiceInfo
+try:
+    from zeroconf import Zeroconf, ServiceInfo
+except ImportError:
+    Zeroconf = None
+    ServiceInfo = None
 
 # =========================================================
 # FLASK WEB APP & CONFIG
@@ -530,6 +534,10 @@ def start_mdns(port=5000):
         subprocess.Popen(f"hostnamectl set-hostname {hostname}", shell=True)
     except Exception:
         pass
+
+    if Zeroconf is None or ServiceInfo is None:
+        print("[mDNS Warning] zeroconf module is not available. mDNS discovery disabled.")
+        return None
 
     try:
         local_ip = get_ip()

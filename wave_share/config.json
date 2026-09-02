@@ -1,0 +1,38 @@
+{
+    "floor_name": "2",
+    "lift_id": "B",
+    "robot_ip": "192.168.10.5",
+    "robot_port": 502,
+    "device_ip": "192.168.1.200",
+    "device_port": 4196,
+    "waveshare": {
+        "ip": "192.168.1.200",
+        "port": 4196,
+        "unit_id": 1,
+        "door_sensor_input": 0,
+        "door_sensor_invert": false,
+        "manual_up_input": 1,
+        "manual_down_input": 2,
+        "button_active_low": false,
+        "up_solenoid_coil": 0,
+        "down_solenoid_coil": 1,
+        "up_indicator_coil": 2,
+        "down_indicator_coil": 3,
+        "idel_status_coil": 5,
+        "use_status_coil": 6,
+        "error_status_coil": 7
+    },
+    "addr": {
+        "robot_port_502": {
+            "floor": 10,
+            "heartbeat": 11,
+            "lift_status": 12,
+            "command": 13,
+            "door": 14,
+            "call_target": 16
+        }
+    },
+    "settings": {
+        "pulse_count": 5
+    }
+}

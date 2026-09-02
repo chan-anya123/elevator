@@ -1,0 +1,453 @@
+25/08/2026, 11:13:36,[Physical Button] DOWN Button (Input 2) Pressed -> Lift A
+25/08/2026, 11:13:46,[Physical Button] DOWN Button (Input 2) Pressed -> Lift A
+25/08/2026, 11:13:47,[Physical Button] DOWN Button (Input 2) Pressed -> Lift A
+25/08/2026, 11:13:50,[Physical Button] UP Button (Input 1) Pressed -> Lift A
+25/08/2026, 11:14:02,[Door Event] Lift A Door OPENED -> Cleared Manual Call
+25/08/2026, 11:21:02,[COMMUNICATION ERROR] Disconnected from Waveshare (192.168.1.200:4196)
+25/08/2026, 11:33:30,[COMMUNICATION ERROR] Disconnected from Waveshare (192.168.1.200:4196)
+25/08/2026, 11:35:50,[COMMUNICATION SUCCESS] Connected to Waveshare Device (192.168.1.200:4196)
+25/08/2026, 11:36:01,[Config Saved] Settings updated for Lift B (Robot: 192.168.10.5:502)
+25/08/2026, 11:36:03,[Manual Command] UP Solenoid triggered via UI
+25/08/2026, 11:36:03,[Manual UI] Lift B Called UP (Coil 0 Solenoid + Coil 2 Light)
+25/08/2026, 11:36:04,[Manual Command] DOWN Solenoid triggered via UI
+25/08/2026, 11:36:04,[Manual UI] Lift B Called DOWN (Coil 1 Solenoid + Coil 3 Light)
+25/08/2026, 11:36:04,[COMMUNICATION ERROR] Disconnected from Waveshare (192.168.1.200:4196)
+25/08/2026, 11:36:05,[COMMUNICATION SUCCESS] Connected to Waveshare Device (192.168.1.200:4196)
+25/08/2026, 11:36:06,[Manual Command] UP Solenoid triggered via UI
+25/08/2026, 11:36:06,[Manual UI] Lift B Called UP (Coil 0 Solenoid + Coil 2 Light)
+25/08/2026, 11:36:08,[Manual Command] DOWN Solenoid triggered via UI
+25/08/2026, 11:36:08,[Manual UI] Lift B Called DOWN (Coil 1 Solenoid + Coil 3 Light)
+25/08/2026, 11:36:10,[Manual Command] Release All triggered via UI
+25/08/2026, 11:36:10,[Manual UI] Lift B All Relays Released / Stopped
+25/08/2026, 11:36:15,[Config Saved] Settings updated for Lift B (Robot: 192.168.10.5:502)
+25/08/2026, 11:36:33,[Manual Command] Release All triggered via UI
+25/08/2026, 11:36:33,[Manual UI] Lift B All Relays Released / Stopped
+25/08/2026, 11:36:52,[Config Saved] Settings updated for Lift A (Robot: 192.168.10.5:502)
+25/08/2026, 11:36:59,[Auto Robot] Target Floor 1 received -> Calling Lift A
+25/08/2026, 11:37:06,[Manual Command] Release All triggered via UI
+25/08/2026, 11:37:06,[Manual UI] Lift A All Relays Released / Stopped
+25/08/2026, 11:38:09,[Config Saved] Settings updated for Lift B (Robot: 192.168.10.5:502)
+25/08/2026, 11:41:59,⚠️ [COMMUNICATION ERROR] Disconnected from Waveshare (192.168.1.200:4196)
+25/08/2026, 11:41:59,🟢 [COMMUNICATION SUCCESS] Connected to Waveshare Device (192.168.1.200:4196)
+25/08/2026, 11:42:00,[Config Saved] Settings updated for Lift B (Robot: 192.168.10.5:502)
+25/08/2026, 11:42:05,⚠️ [COMMUNICATION ERROR] Disconnected from Waveshare (192.168.1.200:4196)
+25/08/2026, 11:42:05,🟢 [COMMUNICATION SUCCESS] Connected to Waveshare Device (192.168.1.200:4196)
+25/08/2026, 11:42:08,[Auto Robot] Target Floor 1 received for Lift B (Reg 16=1) -> Solenoid Actuated
+25/08/2026, 11:42:18,[Auto Robot] Lift B Door OPEN detected -> Starting Hold-Open Pulse Sequence (0/3)
+25/08/2026, 11:42:19,[Pulse Engine] Lift B Pulse 1/3 Completed
+25/08/2026, 11:42:21,[Pulse Engine] Lift B Pulse 2/3 Completed
+25/08/2026, 11:42:23,[Pulse Engine] Lift B Pulse 3/3 Completed
+25/08/2026, 11:42:23,✅ [MISSION DONE] Completed all 3 pulses -> Auto Mission Finished for Lift B
+25/08/2026, 11:42:23,[Auto Robot] Target Floor 1 received for Lift B (Reg 16=1) -> Solenoid Actuated
+25/08/2026, 11:42:23,[Auto Robot] Lift B Door OPEN detected -> Starting Hold-Open Pulse Sequence (0/3)
+25/08/2026, 11:42:24,[Pulse Engine] Lift B Pulse 1/3 Completed
+25/08/2026, 11:42:26,[Pulse Engine] Lift B Pulse 2/3 Completed
+25/08/2026, 11:42:28,[Pulse Engine] Lift B Pulse 3/3 Completed
+25/08/2026, 11:42:28,✅ [MISSION DONE] Completed all 3 pulses -> Auto Mission Finished for Lift B
+25/08/2026, 11:42:40,[Config Saved] Settings updated for Lift A (Robot: 192.168.10.5:502)
+25/08/2026, 11:42:45,⚠️ [COMMUNICATION ERROR] Disconnected from Waveshare (192.168.1.200:4196)
+25/08/2026, 11:42:45,🟢 [COMMUNICATION SUCCESS] Connected to Waveshare Device (192.168.1.200:4196)
+25/08/2026, 11:42:50,[Auto Robot] Target Floor 1 received for Lift A (Reg 6=1) -> Solenoid Actuated
+25/08/2026, 11:43:04,[Auto Robot] Lift A Door OPEN detected -> Starting Hold-Open Pulse Sequence (0/3)
+25/08/2026, 11:43:05,[Pulse Engine] Lift A Pulse 1/3 Completed
+25/08/2026, 11:43:07,[Pulse Engine] Lift A Pulse 2/3 Completed
+25/08/2026, 11:43:09,[Pulse Engine] Lift A Pulse 3/3 Completed
+25/08/2026, 11:43:09,✅ [MISSION DONE] Completed all 3 pulses -> Auto Mission Finished for Lift A
+25/08/2026, 11:43:09,[Auto Robot] Target Floor 1 received for Lift A (Reg 6=1) -> Solenoid Actuated
+25/08/2026, 11:43:09,[Auto Robot] Lift A Door OPEN detected -> Starting Hold-Open Pulse Sequence (0/3)
+25/08/2026, 11:43:10,[Pulse Engine] Lift A Pulse 1/3 Completed
+25/08/2026, 11:43:12,[Pulse Engine] Lift A Pulse 2/3 Completed
+25/08/2026, 11:43:13,❌ [MISSION ERROR] Lift A door CLOSED prematurely after pulse 2/3! Recovering...
+25/08/2026, 11:43:14,🟢 [RECOVERY SUCCESS] Lift A door REOPENED! Resuming pulse 3/3
+25/08/2026, 11:43:14,❌ [MISSION ERROR] Lift A door CLOSED prematurely after pulse 2/3! Recovering...
+25/08/2026, 11:43:15,🟢 [RECOVERY SUCCESS] Lift A door REOPENED! Resuming pulse 3/3
+25/08/2026, 11:43:16,[Pulse Engine] Lift A Pulse 3/3 Completed
+25/08/2026, 11:43:17,✅ [MISSION DONE] Completed all 3 pulses -> Auto Mission Finished for Lift A
+25/08/2026, 11:43:34,[Config Saved] Settings updated for Lift A (Robot: 192.168.10.5:502)
+25/08/2026, 11:43:39,⚠️ [COMMUNICATION ERROR] Disconnected from Waveshare (192.168.1.200:4196)
+25/08/2026, 11:43:39,🟢 [COMMUNICATION SUCCESS] Connected to Waveshare Device (192.168.1.200:4196)
+25/08/2026, 11:43:40,[Config Saved] Settings updated for Lift B (Robot: 192.168.10.5:502)
+25/08/2026, 11:43:44,⚠️ [COMMUNICATION ERROR] Disconnected from Waveshare (192.168.1.200:4196)
+25/08/2026, 11:43:44,🟢 [COMMUNICATION SUCCESS] Connected to Waveshare Device (192.168.1.200:4196)
+25/08/2026, 11:43:45,[Auto Robot] Target Floor 1 received for Lift B (Reg 16=1) -> Solenoid Actuated
+25/08/2026, 11:43:55,[Auto Robot] Lift B Door OPEN detected -> Starting Hold-Open Pulse Sequence (0/3)
+25/08/2026, 11:43:56,[Pulse Engine] Lift B Pulse 1/3 Completed
+25/08/2026, 11:43:58,[Pulse Engine] Lift B Pulse 2/3 Completed
+25/08/2026, 11:43:59,[Pulse Engine] Lift B Pulse 3/3 Completed
+25/08/2026, 11:44:00,✅ [MISSION DONE] Completed all 3 pulses -> Auto Mission Finished for Lift B
+25/08/2026, 11:46:03,⚠️ [COMMUNICATION ERROR] Disconnected from Waveshare (192.168.1.200:4196)
+25/08/2026, 11:46:03,🟢 [COMMUNICATION SUCCESS] Connected to Waveshare Device (192.168.1.200:4196)
+25/08/2026, 11:46:05,[Config Saved] Settings updated for Lift A (Robot: 192.168.10.5:502)
+25/08/2026, 11:46:10,⚠️ [COMMUNICATION ERROR] Disconnected from Waveshare (192.168.1.200:4196)
+25/08/2026, 11:46:10,🟢 [COMMUNICATION SUCCESS] Connected to Waveshare Device (192.168.1.200:4196)
+25/08/2026, 11:46:10,[Auto Robot] Target Floor 1 received for Lift A -> Calling Lift
+25/08/2026, 11:46:18,[Auto Robot] Lift A Door OPEN detected -> Starting Hold-Open Sequence (3 Pulses)
+25/08/2026, 11:46:19,[Pulse Engine] Lift A Pulse 1/3 Completed
+25/08/2026, 11:46:21,[Pulse Engine] Lift A Pulse 2/3 Completed
+25/08/2026, 11:46:23,[Pulse Engine] Lift A Pulse 3/3 Completed
+25/08/2026, 11:46:23,✅ [MISSION DONE] Completed exactly 3 pulses -> Auto Mission Finished for Lift A
+25/08/2026, 11:46:37,[Config Saved] Settings updated for Lift B (Robot: 192.168.10.5:502)
+25/08/2026, 11:46:42,⚠️ [COMMUNICATION ERROR] Disconnected from Waveshare (192.168.1.200:4196)
+25/08/2026, 11:46:42,🟢 [COMMUNICATION SUCCESS] Connected to Waveshare Device (192.168.1.200:4196)
+25/08/2026, 11:46:45,[Auto Robot] Target Floor 1 received for Lift B -> Calling Lift
+25/08/2026, 11:46:49,[Auto Robot] Lift B Door OPEN detected -> Starting Hold-Open Sequence (2 Pulses)
+25/08/2026, 11:46:51,[Pulse Engine] Lift B Pulse 1/2 Completed
+25/08/2026, 11:46:52,[Pulse Engine] Lift B Pulse 2/2 Completed
+25/08/2026, 11:46:53,✅ [MISSION DONE] Completed exactly 2 pulses -> Auto Mission Finished for Lift B
+25/08/2026, 11:52:57,⚠️ [COMMUNICATION ERROR] Disconnected from Waveshare (192.168.1.200:4196)
+25/08/2026, 11:52:57,🟢 [COMMUNICATION SUCCESS] Connected to Waveshare Device (192.168.1.200:4196)
+25/08/2026, 11:56:07,[COMMUNICATION ERROR] Disconnected from Waveshare (192.168.1.200:4196)
+25/08/2026, 11:56:07,[COMMUNICATION SUCCESS] Connected to Waveshare Device (192.168.1.200:4196)
+25/08/2026, 11:56:13,[Config Saved] Settings updated for Lift A (Robot: 192.168.10.5:502)
+25/08/2026, 11:56:17,[COMMUNICATION ERROR] Disconnected from Waveshare (192.168.1.200:4196)
+25/08/2026, 11:56:17,[COMMUNICATION SUCCESS] Connected to Waveshare Device (192.168.1.200:4196)
+25/08/2026, 11:59:31,[COMMUNICATION ERROR] Disconnected from Waveshare (192.168.1.200:4196)
+25/08/2026, 12:57:33,[COMMUNICATION ERROR] Disconnected from Waveshare (192.168.1.200:4196)
+25/08/2026, 12:59:51,[COMMUNICATION ERROR] Disconnected from Waveshare (192.168.1.200:4196)
+25/08/2026, 13:01:12,[COMMUNICATION ERROR] Disconnected from Waveshare (192.168.1.200:4196)
+25/08/2026, 13:25:27,[COMMUNICATION ERROR] Disconnected from Waveshare (192.168.1.200:4196)
+25/08/2026, 13:26:05,⚠️ [COMMUNICATION ERROR] Disconnected from Waveshare (192.168.1.200:4196)
+25/08/2026, 13:26:34,[Config Saved] Settings updated for Lift A (Robot: 192.168.10.5:502)
+25/08/2026, 13:26:38,🟢 [COMMUNICATION SUCCESS] Connected to Waveshare Device (192.168.1.200:4196)
+25/08/2026, 13:26:44,[Manual Command] Release All triggered via UI
+25/08/2026, 13:26:44,[Manual UI] Lift A All Relays Released / Stopped
+25/08/2026, 13:26:53,[Physical Button] UP Button (Input 1) Pressed -> Lift A
+25/08/2026, 13:26:57,[Physical Button] DOWN Button (Input 2) Pressed -> Lift A
+25/08/2026, 13:26:57,[Rate-Limit] Physical DOWN button press ignored (2s cooldown)
+25/08/2026, 13:26:58,[Rate-Limit] Physical DOWN button press ignored (2s cooldown)
+25/08/2026, 13:26:58,[Rate-Limit] Physical DOWN button press ignored (2s cooldown)
+25/08/2026, 13:26:59,[Physical Button] DOWN Button (Input 2) Pressed -> Lift A
+25/08/2026, 13:26:59,[Rate-Limit] Physical DOWN button press ignored (2s cooldown)
+25/08/2026, 13:27:00,[Rate-Limit] Physical DOWN button press ignored (2s cooldown)
+25/08/2026, 13:27:00,[Rate-Limit] Physical DOWN button press ignored (2s cooldown)
+25/08/2026, 13:27:01,[Physical Button] DOWN Button (Input 2) Pressed -> Lift A
+25/08/2026, 13:27:01,[Rate-Limit] Physical DOWN button press ignored (2s cooldown)
+25/08/2026, 13:27:02,[Rate-Limit] Physical DOWN button press ignored (2s cooldown)
+25/08/2026, 13:27:05,[Physical Button] UP Button (Input 1) Pressed -> Lift A
+25/08/2026, 13:27:07,[Rate-Limit] Physical UP button press ignored (2s cooldown)
+25/08/2026, 13:27:09,[Physical Button] UP Button (Input 1) Pressed -> Lift A
+25/08/2026, 13:27:11,[Physical Button] UP Button (Input 1) Pressed -> Lift A
+25/08/2026, 13:27:20,[Physical Button] UP Button (Input 1) Pressed -> Lift A
+25/08/2026, 13:27:21,[Rate-Limit] Physical UP button press ignored (2s cooldown)
+25/08/2026, 13:27:22,[Physical Button] UP Button (Input 1) Pressed -> Lift A
+25/08/2026, 13:27:32,[Door Event] Lift A Door OPENED -> Cleared Manual Call
+25/08/2026, 13:31:40,[COMMUNICATION ERROR] Disconnected from Waveshare (192.168.1.200:4196)
+25/08/2026, 13:31:40,[COMMUNICATION SUCCESS] Connected to Waveshare Device (192.168.1.200:4196)
+25/08/2026, 13:32:47,[Manual Command] UP Solenoid triggered via UI
+25/08/2026, 13:32:47,[Manual UI] Lift A Called UP (Coil 0 Solenoid + Coil 2 Light)
+25/08/2026, 13:32:47,[Manual Command] DOWN Solenoid triggered via UI
+25/08/2026, 13:32:47,[Manual UI] Lift A Called DOWN (Coil 1 Solenoid + Coil 3 Light)
+25/08/2026, 13:32:49,[Manual Command] Release All triggered via UI
+25/08/2026, 13:32:49,[Manual UI] Lift A All Relays Released / Stopped
+25/08/2026, 13:33:01,[COMMUNICATION ERROR] Disconnected from Waveshare (192.168.1.200:4196)
+25/08/2026, 13:33:45,[COMMUNICATION ERROR] Disconnected from Waveshare (192.168.1.200:4196)
+25/08/2026, 13:35:12,[COMMUNICATION ERROR] Disconnected from Waveshare (192.168.1.200:4196)
+25/08/2026, 13:37:29,[COMMUNICATION ERROR] Disconnected from Waveshare (192.168.1.200:4196)
+26/08/2026, 09:22:05,[COMMUNICATION ERROR] Disconnected from Waveshare (192.168.1.200:4196)
+26/08/2026, 11:01:33,[COMMUNICATION ERROR] Disconnected from Waveshare (192.168.1.200:4196)
+26/08/2026, 11:09:22,[COMMUNICATION ERROR] Disconnected from Waveshare (192.168.1.200:4196)
+26/08/2026, 11:10:57,[COMMUNICATION ERROR] Disconnected from Waveshare (192.168.1.200:4196)
+26/08/2026, 11:14:06,[COMMUNICATION ERROR] Disconnected from Waveshare (192.168.1.200:4196)
+26/08/2026, 11:14:40,[COMMUNICATION ERROR] Disconnected from Waveshare (192.168.1.200:4196)
+26/08/2026, 11:16:26,[COMMUNICATION ERROR] Disconnected from Waveshare (192.168.1.200:4196)
+26/08/2026, 11:18:09,[COMMUNICATION ERROR] Disconnected from Waveshare (192.168.1.200:4196)
+26/08/2026, 11:22:23,[COMMUNICATION ERROR] Disconnected from Waveshare (192.168.1.200:4196)
+26/08/2026, 11:23:18,[COMMUNICATION ERROR] Disconnected from Waveshare (192.168.1.200:4196)
+26/08/2026, 11:23:51,[COMMUNICATION ERROR] Disconnected from Waveshare (192.168.1.200:4196)
+26/08/2026, 11:30:34,[COMMUNICATION ERROR] Disconnected from Waveshare (192.168.1.200:4196)
+26/08/2026, 11:37:26,[COMMUNICATION ERROR] Disconnected from Waveshare (192.168.1.200:4196)
+26/08/2026, 11:38:01,[COMMUNICATION ERROR] Disconnected from Waveshare (192.168.1.200:4196)
+26/08/2026, 11:38:30,[COMMUNICATION ERROR] Disconnected from Waveshare (192.168.1.200:4196)
+26/08/2026, 11:41:54,[COMMUNICATION ERROR] Disconnected from Waveshare (192.168.1.200:4196)
+26/08/2026, 11:43:12,[COMMUNICATION ERROR] Disconnected from Waveshare (192.168.1.200:4196)
+26/08/2026, 11:46:08,[COMMUNICATION ERROR] Disconnected from Waveshare (192.168.1.200:4196)
+26/08/2026, 11:46:23,[COMMUNICATION ERROR] Disconnected from Waveshare (192.168.1.200:4196)
+26/08/2026, 11:47:03,[COMMUNICATION ERROR] Disconnected from Waveshare (192.168.1.200:4196)
+26/08/2026, 11:47:40,[Config Saved] Settings updated for Lift A (Robot: 192.168.10.5:502)
+26/08/2026, 11:47:45,[COMMUNICATION SUCCESS] Connected to Waveshare Device (192.168.1.200:4196)
+26/08/2026, 11:47:51,[Config Saved] Settings updated for Lift B (Robot: 192.168.10.5:502)
+26/08/2026, 11:47:55,[COMMUNICATION ERROR] Disconnected from Waveshare (192.168.1.200:4196)
+26/08/2026, 11:47:55,[COMMUNICATION SUCCESS] Connected to Waveshare Device (192.168.1.200:4196)
+26/08/2026, 11:52:12,[COMMUNICATION ERROR] Disconnected from Waveshare (192.168.1.200:4196)
+26/08/2026, 11:52:12,[COMMUNICATION SUCCESS] Connected to Waveshare Device (192.168.1.200:4196)
+26/08/2026, 11:52:48,[COMMUNICATION ERROR] Disconnected from Waveshare (192.168.1.200:4196)
+26/08/2026, 11:52:48,[COMMUNICATION SUCCESS] Connected to Waveshare Device (192.168.1.200:4196)
+26/08/2026, 11:53:57,[COMMUNICATION ERROR] Disconnected from Waveshare (192.168.1.200:4196)
+26/08/2026, 11:53:57,[COMMUNICATION SUCCESS] Connected to Waveshare Device (192.168.1.200:4196)
+26/08/2026, 11:54:45,[COMMUNICATION ERROR] Disconnected from Waveshare (192.168.1.200:4196)
+26/08/2026, 11:54:45,[COMMUNICATION SUCCESS] Connected to Waveshare Device (192.168.1.200:4196)
+26/08/2026, 11:54:59,[Config Saved] Settings updated for Lift B (Robot: 192.168.10.5:502)
+26/08/2026, 11:55:03,[COMMUNICATION ERROR] Disconnected from Waveshare (192.168.1.200:4196)
+26/08/2026, 11:55:03,[COMMUNICATION SUCCESS] Connected to Waveshare Device (192.168.1.200:4196)
+26/08/2026, 11:57:44,[COMMUNICATION ERROR] Disconnected from Waveshare (192.168.1.200:4196)
+26/08/2026, 11:57:44,[COMMUNICATION SUCCESS] Connected to Waveshare Device (192.168.1.200:4196)
+26/08/2026, 11:57:47,[Manual Command] UP Solenoid triggered via UI
+26/08/2026, 11:57:47,[Manual UI] Lift B Called UP (Coil 0 Solenoid + Coil 2 Light)
+26/08/2026, 11:57:48,[Manual Command] DOWN Solenoid triggered via UI
+26/08/2026, 11:57:48,[Manual UI] Lift B Called DOWN (Coil 1 Solenoid + Coil 3 Light)
+26/08/2026, 11:57:50,[Manual Command] Release All triggered via UI
+26/08/2026, 11:57:50,[Manual UI] Lift B All Relays Released / Stopped
+26/08/2026, 11:57:57,[Auto Robot] Target Floor 2 (Current Lift is at 2) -> Calling Lift UP
+26/08/2026, 11:58:04,[Auto Robot] Lift B Door OPEN detected -> Starting Hold-Open Sequence (5 Pulses, Dir: UP)
+26/08/2026, 11:58:05,[Pulse Engine] Lift B Pulse 1/5 Completed (Dir: UP)
+26/08/2026, 11:58:07,[Pulse Engine] Lift B Pulse 2/5 Completed (Dir: UP)
+26/08/2026, 11:58:09,[Pulse Engine] Lift B Pulse 3/5 Completed (Dir: UP)
+26/08/2026, 11:58:10,[Pulse Engine] Lift B Pulse 4/5 Completed (Dir: UP)
+26/08/2026, 11:58:12,[Pulse Engine] Lift B Pulse 5/5 Completed (Dir: UP)
+26/08/2026, 11:58:12,[MISSION DONE] Completed exactly 5 pulses -> Auto Mission Finished for Lift B
+26/08/2026, 11:58:26,[Config Saved] Settings updated for Lift B (Robot: 192.168.10.5:502)
+26/08/2026, 11:58:31,[COMMUNICATION ERROR] Disconnected from Waveshare (192.168.1.200:4196)
+26/08/2026, 11:58:31,[COMMUNICATION SUCCESS] Connected to Waveshare Device (192.168.1.200:4196)
+26/08/2026, 13:08:04,[COMMUNICATION ERROR] Disconnected from Waveshare (192.168.1.200:4196)
+26/08/2026, 13:08:04,[COMMUNICATION SUCCESS] Connected to Waveshare Device (192.168.1.200:4196)
+26/08/2026, 13:08:27,[COMMUNICATION ERROR] Disconnected from Waveshare (192.168.1.200:4196)
+26/08/2026, 13:08:28,[COMMUNICATION SUCCESS] Connected to Waveshare Device (192.168.1.200:4196)
+26/08/2026, 13:14:20,[COMMUNICATION ERROR] Disconnected from Waveshare (192.168.1.200:4196)
+26/08/2026, 13:14:20,[COMMUNICATION SUCCESS] Connected to Waveshare Device (192.168.1.200:4196)
+26/08/2026, 13:14:30,[Auto Robot] Target Floor 2 (Current Lift is at 2) -> Calling Lift UP
+26/08/2026, 13:14:40,[Auto Robot] Lift B Door OPEN detected -> Starting Hold-Open Sequence (2 Pulses, Dir: UP)
+26/08/2026, 13:14:41,[Pulse Engine] Lift B Pulse 1/2 Completed (Dir: UP)
+26/08/2026, 13:14:42,[Pulse Engine] Lift B Pulse 2/2 Completed (Dir: UP)
+26/08/2026, 13:14:43,[MISSION DONE] Completed exactly 2 pulses -> Auto Mission Finished for Lift B
+26/08/2026, 13:14:55,[Config Saved] Settings updated for Lift B (Robot: 192.168.10.5:502)
+26/08/2026, 13:15:00,[COMMUNICATION ERROR] Disconnected from Waveshare (192.168.1.200:4196)
+26/08/2026, 13:15:00,[COMMUNICATION SUCCESS] Connected to Waveshare Device (192.168.1.200:4196)
+26/08/2026, 13:15:02,[Auto Robot] Target Floor 2 (Current Lift is at 2) -> Calling Lift UP
+26/08/2026, 13:15:07,[Auto Robot] Lift B Door OPEN detected -> Starting Hold-Open Sequence (5 Pulses, Dir: UP)
+26/08/2026, 13:15:08,[Pulse Engine] Lift B Pulse 1/5 Completed (Dir: UP)
+26/08/2026, 13:15:09,[MISSION ERROR] Lift B door CLOSED prematurely after pulse 1/5! Recovering...
+26/08/2026, 13:15:16,[RECOVERY SUCCESS] Lift B door REOPENED! Resuming pulse 2/5
+26/08/2026, 13:15:17,[Pulse Engine] Lift B Pulse 2/5 Completed (Dir: UP)
+26/08/2026, 13:15:18,[Pulse Engine] Lift B Pulse 3/5 Completed (Dir: UP)
+26/08/2026, 13:15:20,[Pulse Engine] Lift B Pulse 4/5 Completed (Dir: UP)
+26/08/2026, 13:15:22,[Pulse Engine] Lift B Pulse 5/5 Completed (Dir: UP)
+26/08/2026, 13:15:22,[MISSION DONE] Completed exactly 5 pulses -> Auto Mission Finished for Lift B
+26/08/2026, 13:19:02,[COMMUNICATION ERROR] Disconnected from Device (192.168.1.200:4196)
+26/08/2026, 13:19:02,[COMMUNICATION SUCCESS] Connected to Device (192.168.1.200:4196)
+26/08/2026, 13:19:16,[Auto Robot] Target Floor 2 (Current Lift is at 2) -> Calling Lift UP
+26/08/2026, 13:19:24,[Auto Robot] Lift B Door OPEN detected -> Starting Hold-Open Sequence (5 Pulses, Dir: UP)
+26/08/2026, 13:19:25,[Pulse Engine] Lift B Pulse 1/5 Completed (Dir: UP)
+26/08/2026, 13:19:26,[Pulse Engine] Lift B Pulse 2/5 Completed (Dir: UP)
+26/08/2026, 13:19:27,[MISSION ERROR] Lift B door CLOSED prematurely after pulse 2/5! Recovering...
+26/08/2026, 13:19:48,[RECOVERY SUCCESS] Lift B door REOPENED! Resuming pulse 3/5
+26/08/2026, 13:19:49,[Pulse Engine] Lift B Pulse 3/5 Completed (Dir: UP)
+26/08/2026, 13:19:51,[Pulse Engine] Lift B Pulse 4/5 Completed (Dir: UP)
+26/08/2026, 13:19:52,[Pulse Engine] Lift B Pulse 5/5 Completed (Dir: UP)
+26/08/2026, 13:19:53,[MISSION DONE] Completed exactly 5 pulses -> Auto Mission Finished for Lift B
+26/08/2026, 13:24:06,[COMMUNICATION ERROR] Disconnected from Device (192.168.1.200:4196)
+26/08/2026, 13:24:06,[COMMUNICATION SUCCESS] Connected to Device (192.168.1.200:4196)
+26/08/2026, 13:25:37,[Auto Robot] Target Floor 2 (Current Lift is at 2) -> Calling Lift UP
+26/08/2026, 13:25:45,[Auto Robot] Lift B Door OPEN detected -> Starting Hold-Open Sequence (5 Pulses, Dir: UP)
+26/08/2026, 13:25:46,[Pulse Engine] Lift B Pulse 1/5 Completed (Dir: UP)
+26/08/2026, 13:25:48,[MISSION ERROR] Lift B door CLOSED prematurely after pulse 1/5! Recovering...
+26/08/2026, 13:26:10,[RECOVERY SUCCESS] Lift B door REOPENED! Resuming pulse 2/5
+26/08/2026, 13:26:11,[Pulse Engine] Lift B Pulse 2/5 Completed (Dir: UP)
+26/08/2026, 13:26:13,[Pulse Engine] Lift B Pulse 3/5 Completed (Dir: UP)
+26/08/2026, 13:26:15,[Pulse Engine] Lift B Pulse 4/5 Completed (Dir: UP)
+26/08/2026, 13:26:17,[Pulse Engine] Lift B Pulse 5/5 Completed (Dir: UP)
+26/08/2026, 13:26:17,[MISSION DONE] Completed exactly 5 pulses -> Auto Mission Finished for Lift B
+26/08/2026, 13:26:42,[Config Saved] Settings updated for Lift B (Robot: 192.168.10.5:502)
+26/08/2026, 13:26:46,[COMMUNICATION ERROR] Disconnected from Device (192.168.1.200:4196)
+26/08/2026, 13:26:46,[COMMUNICATION SUCCESS] Connected to Device (192.168.1.200:4196)
+26/08/2026, 13:27:24,[COMMUNICATION ERROR] Disconnected from Device (192.168.1.200:4196)
+26/08/2026, 13:27:24,[COMMUNICATION SUCCESS] Connected to Device (192.168.1.200:4196)
+26/08/2026, 13:27:29,[Auto Robot] Target Floor 2 (Current Lift is at 2) -> Calling Lift UP
+26/08/2026, 13:27:34,[Auto Robot] Lift B Door OPEN detected -> Starting Hold-Open Sequence (3 Pulses, Dir: UP)
+26/08/2026, 13:27:35,[Pulse Engine] Lift B Pulse 1/3 Completed (Dir: UP)
+26/08/2026, 13:27:36,[MISSION ERROR] Lift B door CLOSED prematurely after pulse 1/3! Recovering...
+26/08/2026, 13:27:50,[RECOVERY SUCCESS] Lift B door REOPENED! Resuming pulse 2/3
+26/08/2026, 13:27:50,[MISSION ERROR] Lift B door CLOSED prematurely after pulse 1/3! Recovering...
+26/08/2026, 13:27:51,[RECOVERY SUCCESS] Lift B door REOPENED! Resuming pulse 2/3
+26/08/2026, 13:27:52,[Pulse Engine] Lift B Pulse 2/3 Completed (Dir: UP)
+26/08/2026, 13:27:54,[Pulse Engine] Lift B Pulse 3/3 Completed (Dir: UP)
+26/08/2026, 13:27:54,[MISSION DONE] Completed exactly 3 pulses -> Auto Mission Finished for Lift B
+26/08/2026, 13:29:47,[COMMUNICATION ERROR] Disconnected from Device (192.168.1.200:4196)
+26/08/2026, 13:29:47,[COMMUNICATION SUCCESS] Connected to Device (192.168.1.200:4196)
+26/08/2026, 13:29:55,[Config Saved] Settings updated for Lift B (Robot: 192.168.10.5:502)
+26/08/2026, 13:29:59,[Config Saved] Settings updated for Lift B (Robot: 192.168.10.5:502)
+26/08/2026, 13:30:02,[Config Saved] Settings updated for Lift B (Robot: 192.168.10.5:502)
+26/08/2026, 13:30:07,[COMMUNICATION ERROR] Disconnected from Device (192.168.1.200:4196)
+26/08/2026, 13:30:07,[COMMUNICATION SUCCESS] Connected to Device (192.168.1.200:4196)
+26/08/2026, 13:30:14,[COMMUNICATION ERROR] Disconnected from Device (192.168.1.200:4196)
+26/08/2026, 13:30:15,[COMMUNICATION SUCCESS] Connected to Device (192.168.1.200:4196)
+26/08/2026, 13:30:19,[Manual Command] UP Solenoid triggered via UI
+26/08/2026, 13:30:19,[Manual UI] Lift B Called UP (Coil 0 Solenoid + Coil 2 Light)
+26/08/2026, 13:30:20,[Manual Command] DOWN Solenoid triggered via UI
+26/08/2026, 13:30:20,[Manual UI] Lift B Called DOWN (Coil 1 Solenoid + Coil 3 Light)
+26/08/2026, 13:30:21,[Manual Command] Release All triggered via UI
+26/08/2026, 13:30:21,[Manual UI] Lift B All Relays Released / Stopped
+26/08/2026, 13:30:27,[Config Saved] Settings updated for Lift B (Robot: 192.168.10.5:502)
+26/08/2026, 13:30:29,[Config Saved] Settings updated for Lift B (Robot: 192.168.10.5:502)
+26/08/2026, 13:30:34,[COMMUNICATION ERROR] Disconnected from Device (192.168.1.200:4196)
+26/08/2026, 13:30:34,[COMMUNICATION SUCCESS] Connected to Device (192.168.1.200:4196)
+26/08/2026, 13:30:37,[Config Saved] Settings updated for Lift A (Robot: 192.168.10.5:502)
+26/08/2026, 13:30:41,[COMMUNICATION ERROR] Disconnected from Device (192.168.1.200:4196)
+26/08/2026, 13:30:41,[COMMUNICATION SUCCESS] Connected to Device (192.168.1.200:4196)
+26/08/2026, 13:30:47,[Config Saved] Settings updated for Lift B (Robot: 192.168.10.5:502)
+26/08/2026, 13:30:52,[COMMUNICATION ERROR] Disconnected from Device (192.168.1.200:4196)
+26/08/2026, 13:30:52,[COMMUNICATION SUCCESS] Connected to Device (192.168.1.200:4196)
+26/08/2026, 13:31:07,[Config Saved] Settings updated for Lift A (Robot: 192.168.10.5:502)
+26/08/2026, 13:31:12,[COMMUNICATION ERROR] Disconnected from Device (192.168.1.200:4196)
+26/08/2026, 13:31:12,[COMMUNICATION SUCCESS] Connected to Device (192.168.1.200:4196)
+26/08/2026, 13:31:13,[Config Saved] Settings updated for Lift B (Robot: 192.168.10.5:502)
+26/08/2026, 13:31:18,[COMMUNICATION ERROR] Disconnected from Device (192.168.1.200:4196)
+26/08/2026, 13:31:18,[COMMUNICATION SUCCESS] Connected to Device (192.168.1.200:4196)
+26/08/2026, 13:31:21,[Config Saved] Settings updated for Lift A (Robot: 192.168.10.5:502)
+26/08/2026, 13:31:25,[COMMUNICATION ERROR] Disconnected from Device (192.168.1.200:4196)
+26/08/2026, 13:31:25,[COMMUNICATION SUCCESS] Connected to Device (192.168.1.200:4196)
+26/08/2026, 13:40:06,[COMMUNICATION ERROR] Disconnected from Device (192.168.1.200:4196)
+26/08/2026, 13:40:11,[COMMUNICATION SUCCESS] Connected to Device (192.168.1.200:4196)
+26/08/2026, 13:40:41,[COMMUNICATION ERROR] Disconnected from Device (192.168.1.200:4196)
+26/08/2026, 13:40:45,[COMMUNICATION SUCCESS] Connected to Device (192.168.1.200:4196)
+26/08/2026, 13:41:00,[Config Saved] Settings updated for Lift A (Robot: 192.168.10.5:502)
+26/08/2026, 13:41:03,[COMMUNICATION ERROR] Disconnected from Device (192.168.1.200:4196)
+26/08/2026, 13:41:04,[COMMUNICATION SUCCESS] Connected to Device (192.168.1.200:4196)
+26/08/2026, 13:41:43,[Config Saved] Settings updated for Lift A (Robot: 192.168.10.5:502)
+26/08/2026, 13:41:46,[COMMUNICATION ERROR] Disconnected from Device (192.168.1.200:4196)
+26/08/2026, 13:41:48,[COMMUNICATION SUCCESS] Connected to Device (192.168.1.200:4196)
+26/08/2026, 13:44:16,[COMMUNICATION ERROR] Disconnected from Device (192.168.1.200:4196)
+26/08/2026, 13:44:20,[COMMUNICATION SUCCESS] Connected to Device (192.168.1.200:4196)
+26/08/2026, 13:44:24,[Config Saved] Settings updated for Lift A (Robot: 192.168.10.5:502)
+26/08/2026, 13:44:27,[COMMUNICATION ERROR] Disconnected from Device (192.168.1.200:4196)
+26/08/2026, 13:44:29,[Config Saved] Settings updated for Lift B (Robot: 192.168.10.5:502)
+26/08/2026, 13:44:33,[COMMUNICATION SUCCESS] Connected to Device (192.168.1.200:4196)
+26/08/2026, 13:44:34,[Config Saved] Settings updated for Lift B (Robot: 192.168.10.5:502)
+26/08/2026, 13:44:37,[COMMUNICATION ERROR] Disconnected from Device (192.168.1.200:4196)
+26/08/2026, 13:44:39,[COMMUNICATION SUCCESS] Connected to Device (192.168.1.200:4196)
+26/08/2026, 13:44:45,[Config Saved] Settings updated for Lift B (Robot: 192.168.10.5:502)
+26/08/2026, 13:44:48,[COMMUNICATION ERROR] Disconnected from Device (192.168.1.200:4196)
+26/08/2026, 13:44:50,[COMMUNICATION SUCCESS] Connected to Device (192.168.1.200:4196)
+26/08/2026, 13:44:59,[Config Saved] Settings updated for Lift A (Robot: 192.168.10.5:502)
+26/08/2026, 13:45:02,[COMMUNICATION ERROR] Disconnected from Device (192.168.1.200:4196)
+26/08/2026, 13:45:04,[COMMUNICATION SUCCESS] Connected to Device (192.168.1.200:4196)
+26/08/2026, 13:45:07,[Config Saved] Settings updated for Lift A (Robot: 192.168.10.5:502)
+26/08/2026, 13:45:10,[COMMUNICATION ERROR] Disconnected from Device (192.168.1.200:4196)
+26/08/2026, 13:45:12,[COMMUNICATION SUCCESS] Connected to Device (192.168.1.200:4196)
+26/08/2026, 13:45:23,[Config Saved] Settings updated for Lift B (Robot: 192.168.10.5:502)
+26/08/2026, 13:45:25,[Config Saved] Settings updated for Lift B (Robot: 192.168.10.5:502)
+26/08/2026, 13:45:26,[COMMUNICATION ERROR] Disconnected from Device (192.168.1.200:4196)
+26/08/2026, 13:45:30,[COMMUNICATION SUCCESS] Connected to Device (192.168.1.200:4196)
+26/08/2026, 13:46:04,[Config Saved] Settings updated for Lift B (Robot: 192.168.10.5:502)
+26/08/2026, 13:46:07,[COMMUNICATION ERROR] Disconnected from Device (192.168.1.200:4196)
+26/08/2026, 13:46:08,[COMMUNICATION SUCCESS] Connected to Device (192.168.1.200:4196)
+26/08/2026, 13:46:09,[Config Saved] Settings updated for Lift B (Robot: 192.168.10.5:502)
+26/08/2026, 13:46:11,[COMMUNICATION ERROR] Disconnected from Device (192.168.1.200:4196)
+26/08/2026, 13:46:13,[COMMUNICATION SUCCESS] Connected to Device (192.168.1.200:4196)
+26/08/2026, 13:46:15,[Config Saved] Settings updated for Lift B (Robot: 192.168.10.5:502)
+26/08/2026, 13:46:18,[Config Saved] Settings updated for Lift B (Robot: 192.168.10.5:502)
+26/08/2026, 13:46:18,[COMMUNICATION ERROR] Disconnected from Device (192.168.1.200:4196)
+26/08/2026, 13:46:21,[Config Saved] Settings updated for Lift B (Robot: 192.168.10.5:502)
+26/08/2026, 13:46:26,[COMMUNICATION SUCCESS] Connected to Device (192.168.1.200:4196)
+26/08/2026, 13:46:30,[Config Saved] Settings updated for Lift A (Robot: 192.168.10.5:502)
+26/08/2026, 13:46:33,[COMMUNICATION ERROR] Disconnected from Device (192.168.1.200:4196)
+26/08/2026, 13:46:34,[Config Saved] Settings updated for Lift A (Robot: 192.168.10.5:502)
+26/08/2026, 13:46:39,[COMMUNICATION SUCCESS] Connected to Device (192.168.1.200:4196)
+26/08/2026, 13:46:41,[Config Saved] Settings updated for Lift A (Robot: 192.168.10.5:502)
+26/08/2026, 13:46:43,[COMMUNICATION ERROR] Disconnected from Device (192.168.1.200:4196)
+26/08/2026, 13:46:45,[Config Saved] Settings updated for Lift A (Robot: 192.168.10.5:502)
+26/08/2026, 13:46:50,[COMMUNICATION SUCCESS] Connected to Device (192.168.1.200:4196)
+26/08/2026, 13:52:22,[COMMUNICATION ERROR] Disconnected from Device (192.168.1.200:4196)
+26/08/2026, 13:52:26,[COMMUNICATION SUCCESS] Connected to Device (192.168.1.200:4196)
+26/08/2026, 13:53:39,[COMMUNICATION ERROR] Disconnected from Device (192.168.1.200:4196)
+26/08/2026, 13:53:44,[COMMUNICATION SUCCESS] Connected to Device (192.168.1.200:4196)
+26/08/2026, 13:53:52,[Config Saved] Settings updated for Lift B (Robot: 192.168.10.5:502)
+26/08/2026, 13:53:54,[COMMUNICATION ERROR] Disconnected from Device (192.168.1.200:4196)
+26/08/2026, 13:53:56,[COMMUNICATION SUCCESS] Connected to Device (192.168.1.200:4196)
+26/08/2026, 13:53:58,[Config Saved] Settings updated for Lift B (Robot: 192.168.10.5:502)
+26/08/2026, 13:54:00,[COMMUNICATION ERROR] Disconnected from Device (192.168.1.200:4196)
+26/08/2026, 13:54:03,[COMMUNICATION SUCCESS] Connected to Device (192.168.1.200:4196)
+26/08/2026, 13:54:13,[Config Saved] Settings updated for Lift B (Robot: 192.168.10.5:502)
+26/08/2026, 13:54:15,[COMMUNICATION ERROR] Disconnected from Device (192.168.1.200:4196)
+26/08/2026, 13:54:17,[Config Saved] Settings updated for Lift B (Robot: 192.168.10.5:502)
+26/08/2026, 13:54:21,[Config Saved] Settings updated for Lift A (Robot: 192.168.10.5:502)
+26/08/2026, 13:54:26,[COMMUNICATION SUCCESS] Connected to Device (192.168.1.200:4196)
+26/08/2026, 13:54:30,[Config Saved] Settings updated for Lift A (Robot: 192.168.10.5:502)
+26/08/2026, 13:54:33,[COMMUNICATION ERROR] Disconnected from Device (192.168.1.200:4196)
+26/08/2026, 13:54:35,[COMMUNICATION SUCCESS] Connected to Device (192.168.1.200:4196)
+26/08/2026, 13:54:37,[Config Saved] Settings updated for Lift A (Robot: 192.168.10.5:502)
+26/08/2026, 13:54:40,[COMMUNICATION ERROR] Disconnected from Device (192.168.1.200:4196)
+26/08/2026, 13:54:42,[COMMUNICATION SUCCESS] Connected to Device (192.168.1.200:4196)
+26/08/2026, 13:54:42,[Config Saved] Settings updated for Lift A (Robot: 192.168.10.5:502)
+26/08/2026, 13:54:44,[COMMUNICATION ERROR] Disconnected from Device (192.168.1.200:4196)
+26/08/2026, 13:54:46,[COMMUNICATION SUCCESS] Connected to Device (192.168.1.200:4196)
+26/08/2026, 13:54:50,[Config Saved] Settings updated for Lift A (Robot: 192.168.10.5:502)
+26/08/2026, 13:54:53,[COMMUNICATION ERROR] Disconnected from Device (192.168.1.200:4196)
+26/08/2026, 13:54:55,[COMMUNICATION SUCCESS] Connected to Device (192.168.1.200:4196)
+26/08/2026, 13:54:59,[Config Saved] Settings updated for Lift A (Robot: 192.168.10.5:502)
+26/08/2026, 13:55:02,[Config Saved] Settings updated for Lift A (Robot: 192.168.10.5:502)
+26/08/2026, 13:55:02,[COMMUNICATION ERROR] Disconnected from Device (192.168.1.200:4196)
+26/08/2026, 13:55:06,[COMMUNICATION SUCCESS] Connected to Device (192.168.1.200:4196)
+26/08/2026, 13:55:17,[Config Saved] Settings updated for Lift B (Robot: 192.168.10.5:502)
+26/08/2026, 13:55:20,[COMMUNICATION ERROR] Disconnected from Device (192.168.1.200:4196)
+26/08/2026, 13:55:20,[Config Saved] Settings updated for Lift A (Robot: 192.168.10.5:502)
+26/08/2026, 13:55:25,[COMMUNICATION SUCCESS] Connected to Device (192.168.1.200:4196)
+26/08/2026, 13:56:03,[COMMUNICATION ERROR] Disconnected from Device (192.168.1.200:4196)
+26/08/2026, 13:56:07,[COMMUNICATION SUCCESS] Connected to Device (192.168.1.200:4196)
+26/08/2026, 13:56:20,[Config Saved] Settings updated for Lift A (Robot: 192.168.10.5:502)
+26/08/2026, 13:56:22,[COMMUNICATION ERROR] Disconnected from Device (192.168.1.200:4196)
+26/08/2026, 13:56:24,[COMMUNICATION SUCCESS] Connected to Device (192.168.1.200:4196)
+26/08/2026, 13:56:28,[Auto Robot] Target Floor 2 (Current Lift is at 2) -> Calling Lift UP
+26/08/2026, 13:56:38,[Auto Robot] Lift A Door OPEN detected -> Starting Hold-Open Sequence (4 Pulses, Dir: UP)
+26/08/2026, 13:56:39,[MISSION ERROR] Elevator A CLOSED prematurely after pulse 0/4!
+26/08/2026, 13:56:55,[RECOVERY SUCCESS] Lift A door REOPENED! Resuming pulse 1/4
+26/08/2026, 13:56:57,[Pulse Engine] Lift A Pulse 1/4 Completed (Dir: UP)
+26/08/2026, 13:56:58,[Pulse Engine] Lift A Pulse 2/4 Completed (Dir: UP)
+26/08/2026, 13:57:00,[Pulse Engine] Lift A Pulse 3/4 Completed (Dir: UP)
+26/08/2026, 13:57:01,[Pulse Engine] Lift A Pulse 4/4 Completed (Dir: UP)
+26/08/2026, 13:57:02,[MISSION DONE] Completed exactly 4 pulses -> Auto Mission Finished for Lift A
+26/08/2026, 14:03:12,[COMMUNICATION ERROR] Disconnected from Device (192.168.1.200:4196)
+26/08/2026, 14:03:16,[COMMUNICATION SUCCESS] Connected to Device (192.168.1.200:4196)
+26/08/2026, 14:03:43,[COMMUNICATION ERROR] Disconnected from Device (192.168.1.200:4196)
+26/08/2026, 14:03:47,[COMMUNICATION SUCCESS] Connected to Device (192.168.1.200:4196)
+26/08/2026, 14:03:57,[Auto Robot] Target Floor 2 (Current Lift is at 2) -> Calling Lift UP
+26/08/2026, 14:04:03,[Auto Robot] Lift A Door OPEN detected -> Starting Hold-Open Sequence (4 Pulses, Dir: UP)
+26/08/2026, 14:04:04,[Pulse Engine] Lift A Pulse 1/4 Completed (Dir: UP)
+26/08/2026, 14:04:06,[MISSION ERROR] Elevator A CLOSED prematurely after pulse 1/4!
+26/08/2026, 14:04:17,[RECOVERY SUCCESS] Lift A door REOPENED! Resuming pulse 2/4
+26/08/2026, 14:04:18,[Pulse Engine] Lift A Pulse 2/4 Completed (Dir: UP)
+26/08/2026, 14:04:20,[Pulse Engine] Lift A Pulse 3/4 Completed (Dir: UP)
+26/08/2026, 14:04:21,[Pulse Engine] Lift A Pulse 4/4 Completed (Dir: UP)
+26/08/2026, 14:04:22,[MISSION DONE] Completed exactly 4 pulses -> Auto Mission Finished for Lift A
+26/08/2026, 14:04:33,[Config Saved] Settings updated for Lift A (Robot: 192.168.10.5:502)
+26/08/2026, 14:04:35,[COMMUNICATION ERROR] Disconnected from Device (192.168.1.200:4196)
+26/08/2026, 14:04:36,[Config Saved] Settings updated for Lift B (Robot: 192.168.10.5:502)
+26/08/2026, 14:04:40,[COMMUNICATION SUCCESS] Connected to Device (192.168.1.200:4196)
+26/08/2026, 14:06:46,[COMMUNICATION ERROR] Disconnected from Device (192.168.1.200:4196)
+26/08/2026, 14:06:51,[COMMUNICATION SUCCESS] Connected to Device (192.168.1.200:4196)
+26/08/2026, 14:08:15,[COMMUNICATION ERROR] Disconnected from Device (192.168.1.200:4196)
+26/08/2026, 14:08:19,[COMMUNICATION SUCCESS] Connected to Device (192.168.1.200:4196)
+26/08/2026, 14:08:26,[Config Saved] Settings updated for Lift B (Robot: 192.168.10.5:502)
+26/08/2026, 14:08:29,[COMMUNICATION ERROR] Disconnected from Device (192.168.1.200:4196)
+26/08/2026, 14:08:30,[Config Saved] Settings updated for Lift A (Robot: 192.168.10.5:502)
+26/08/2026, 14:08:33,[Config Saved] Settings updated for Lift A (Robot: 192.168.10.5:502)
+26/08/2026, 14:08:38,[COMMUNICATION SUCCESS] Connected to Device (192.168.1.200:4196)
+26/08/2026, 14:10:59,[Auto Robot] Target Floor 1 (Current Lift is at 1) -> Calling Lift UP
+26/08/2026, 14:11:05,[Auto Robot] Lift A Door OPEN detected -> Starting Hold-Open Sequence (4 Pulses, Dir: UP)
+26/08/2026, 14:11:06,[Pulse Engine] Lift A Pulse 1/4 Completed (Dir: UP)
+26/08/2026, 14:11:07,[MISSION ERROR] Elevator A CLOSED prematurely after pulse 1/4!
+26/08/2026, 14:11:10,[RECOVERY SUCCESS] Lift A door REOPENED! Resuming pulse 2/4
+26/08/2026, 14:11:11,[Pulse Engine] Lift A Pulse 2/4 Completed (Dir: UP)
+26/08/2026, 14:11:12,[Pulse Engine] Lift A Pulse 3/4 Completed (Dir: UP)
+26/08/2026, 14:11:14,[Pulse Engine] Lift A Pulse 4/4 Completed (Dir: UP)
+26/08/2026, 14:11:15,[MISSION DONE] Completed exactly 4 pulses -> Auto Mission Finished for Lift A
+26/08/2026, 14:11:55,[COMMUNICATION ERROR] Disconnected from Device (192.168.1.200:4196)
+26/08/2026, 14:11:59,[COMMUNICATION SUCCESS] Connected to Device (192.168.1.200:4196)
+26/08/2026, 14:14:06,[COMMUNICATION ERROR] Disconnected from Device (192.168.1.200:4196)
+26/08/2026, 14:14:10,[COMMUNICATION SUCCESS] Connected to Device (192.168.1.200:4196)
+26/08/2026, 14:14:12,[Manual Command] UP Solenoid triggered via UI
+26/08/2026, 14:14:12,[Manual UI] Lift A Called UP (Coil 0 Solenoid + Coil 2 Light)
+26/08/2026, 14:14:12,[Manual Command] DOWN Solenoid triggered via UI
+26/08/2026, 14:14:12,[Manual UI] Lift A Called DOWN (Coil 1 Solenoid + Coil 3 Light)
+26/08/2026, 14:14:14,[Manual Command] Release All triggered via UI
+26/08/2026, 14:14:14,[Manual UI] Lift A All Relays Released / Stopped
+26/08/2026, 14:14:21,[Config Saved] Settings updated for Lift A (Robot: 192.168.10.5:502)
+26/08/2026, 14:14:24,[COMMUNICATION ERROR] Disconnected from Device (192.168.1.200:4196)
+26/08/2026, 14:14:26,[COMMUNICATION SUCCESS] Connected to Device (192.168.1.200:4196)
+26/08/2026, 14:14:28,[Config Saved] Settings updated for Lift B (Robot: 192.168.10.5:502)
+26/08/2026, 14:14:30,[COMMUNICATION ERROR] Disconnected from Device (192.168.1.200:4196)
+26/08/2026, 14:14:33,[COMMUNICATION SUCCESS] Connected to Device (192.168.1.200:4196)
+26/08/2026, 14:14:36,[Config Saved] Settings updated for Lift B (Robot: 192.168.10.5:502)
+26/08/2026, 14:14:38,[COMMUNICATION ERROR] Disconnected from Device (192.168.1.200:4196)
+26/08/2026, 14:14:40,[COMMUNICATION SUCCESS] Connected to Device (192.168.1.200:4196)
+26/08/2026, 14:17:08,[COMMUNICATION ERROR] Disconnected from Device (192.168.1.200:4196)
+26/08/2026, 14:29:43,[COMMUNICATION ERROR] Disconnected from Device (192.168.1.200:4196)

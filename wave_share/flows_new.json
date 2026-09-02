@@ -1,0 +1,1016 @@
+[
+    {
+        "id": "376ce20b8cfdeb15",
+        "type": "tab",
+        "label": "Elevator Control Center",
+        "disabled": false,
+        "info": "Unified Waveshare Elevator Monitor, Controls & Configuration (Standalone)"
+    },
+    {
+        "id": "5ca85ff7ac5a3b16",
+        "type": "group",
+        "z": "376ce20b8cfdeb15",
+        "name": "Unified Elevator Manager & Status Loop",
+        "style": {
+            "label": true
+        },
+        "nodes": [
+            "0c0d0330c4d9aa10",
+            "d16b83c67073ae71",
+            "3ed69cd3464e2916",
+            "41ef988c725fb0d2",
+            "bd137687932f88f9",
+            "7fe5038d15e8746a",
+            "95cca58f431ed758"
+        ],
+        "x": 94,
+        "y": 79,
+        "w": 1192,
+        "h": 357
+    },
+    {
+        "id": "0b5379784eea4ae6",
+        "type": "group",
+        "z": "376ce20b8cfdeb15",
+        "name": "Activity & Status Log",
+        "style": {
+            "label": true
+        },
+        "nodes": [
+            "7971ececcb7a6f19",
+            "cfae9c8452edc745",
+            "ed0c61eebf8343a7",
+            "6cab124094d6b6c0",
+            "ee18a9b4086914c5",
+            "bf3d7041df744850"
+        ],
+        "x": 54,
+        "y": 479,
+        "w": 607,
+        "h": 192
+    },
+    {
+        "id": "3fa38e3335cbceee",
+        "type": "group",
+        "z": "376ce20b8cfdeb15",
+        "name": "logic",
+        "style": {
+            "label": true
+        },
+        "nodes": [
+            "007abc601b1cfbe7",
+            "e5343b8b574dd3ff",
+            "15e83a7be49c711f",
+            "67b6e8cb62e4122f",
+            "89afd0a877635ed1",
+            "7dd5d5374b0203d7",
+            "2e75be482906d72a",
+            "a30d1f5c0171e383",
+            "75b5406fc9907251"
+        ],
+        "x": 54,
+        "y": 679,
+        "w": 1052,
+        "h": 282
+    },
+    {
+        "id": "73ebe9b3f20585b0",
+        "type": "group",
+        "z": "376ce20b8cfdeb15",
+        "name": "modbus I/O",
+        "style": {
+            "label": true
+        },
+        "nodes": [
+            "2c010eba20b563d6",
+            "58fe944e28c7e74f",
+            "06d3acdd41093454",
+            "b65ca6266fd1ae57"
+        ],
+        "x": 714,
+        "y": 479,
+        "w": 702,
+        "h": 142
+    },
+    {
+        "id": "0c0d0330c4d9aa10",
+        "type": "inject",
+        "z": "376ce20b8cfdeb15",
+        "g": "5ca85ff7ac5a3b16",
+        "name": "Boot Init Config",
+        "props": [],
+        "repeat": "",
+        "crontab": "",
+        "once": true,
+        "onceDelay": 0.3,
+        "topic": "",
+        "x": 220,
+        "y": 180,
+        "wires": [
+            [
+                "d16b83c67073ae71"
+            ]
+        ]
+    },
+    {
+        "id": "d16b83c67073ae71",
+        "type": "file in",
+        "z": "376ce20b8cfdeb15",
+        "g": "5ca85ff7ac5a3b16",
+        "name": "Read config.json",
+        "filename": "/data/config.json",
+        "filenameType": "str",
+        "format": "utf8",
+        "chunk": false,
+        "sendError": false,
+        "encoding": "none",
+        "allProps": false,
+        "x": 440,
+        "y": 180,
+        "wires": [
+            [
+                "3ed69cd3464e2916"
+            ]
+        ]
+    },
+    {
+        "id": "3ed69cd3464e2916",
+        "type": "function",
+        "z": "376ce20b8cfdeb15",
+        "g": "5ca85ff7ac5a3b16",
+        "name": "Parse Dynamic Config",
+        "func": "let cfg = {\n    lift_id: \"A\",\n    floor_name: \"1\",\n    robot_ip: \"192.168.10.5\",\n    robot_port: 502,\n    device_ip: \"192.168.1.200\",\n    device_port: 4196,\n    pulse_count: 5,\n    waveshare: {\n        ip: \"192.168.1.200\",\n        port: 4196,\n        unit_id: 1,\n        door_sensor_input: 0,\n        door_sensor_invert: false,\n        manual_up_input: 1,\n        manual_down_input: 2,\n        button_active_low: false,\n        up_solenoid_coil: 0,\n        down_solenoid_coil: 1,\n        up_indicator_coil: 2,\n        down_indicator_coil: 3,\n        idel_status_coil: 5,\n        use_status_coil: 6,\n        error_status_coil: 7\n    },\n    addr: {\n        robot_port_502: {\n            floor: 0,\n            heartbeat: 1,\n            lift_status: 2,\n            command: 3,\n            door: 4,\n            call_target: 6\n        }\n    }\n};\n\ntry {\n    if (msg.payload) {\n        let loaded = typeof msg.payload === 'string' ? JSON.parse(msg.payload) : msg.payload;\n        if (loaded && typeof loaded === 'object') {\n            if (loaded.lift_id !== undefined) cfg.lift_id = String(loaded.lift_id).toUpperCase();\n            else if (loaded.elevator_name !== undefined) cfg.lift_id = String(loaded.elevator_name).toUpperCase();\n\n            if (loaded.floor_name !== undefined) cfg.floor_name = String(loaded.floor_name);\n            if (loaded.robot_ip !== undefined) cfg.robot_ip = String(loaded.robot_ip);\n            else if (loaded.remote_ip !== undefined) cfg.robot_ip = String(loaded.remote_ip);\n\n            if (loaded.robot_port !== undefined) cfg.robot_port = Number(loaded.robot_port);\n            else if (loaded.remote_port !== undefined) cfg.robot_port = Number(loaded.remote_port);\n\n            if (loaded.pulse_count !== undefined) cfg.pulse_count = Number(loaded.pulse_count);\n\n            if (loaded.waveshare && typeof loaded.waveshare === 'object') {\n                Object.assign(cfg.waveshare, loaded.waveshare);\n            }\n            if (loaded.settings && typeof loaded.settings === 'object') {\n                if (loaded.settings.pulse_count !== undefined) cfg.pulse_count = Number(loaded.settings.pulse_count);\n            }\n        }\n    }\n} catch(e) {}\n\n// HARD-LOCKED DEVICE IP & PORT\ncfg.device_ip = \"192.168.1.200\";\ncfg.device_port = 4196;\ncfg.waveshare.ip = \"192.168.1.200\";\ncfg.waveshare.port = 4196;\n\nlet offset = (cfg.lift_id === \"B\") ? 10 : 0;\ncfg.addr = {\n    robot_port_502: {\n        floor: 0 + offset,\n        heartbeat: 1 + offset,\n        lift_status: 2 + offset,\n        command: 3 + offset,\n        door: 4 + offset,\n        call_target: 6 + offset\n    }\n};\n\nglobal.set('lift_config', cfg);\n\n// Initialize LiftConfig structure for multi-floor / multi-lift standard\nlet liftConfigObj = {\n    \"A\": {\n        robot_addr: { floor: 0, heartbeat: 1, status: 2, command: 3, door: 4, target: 6 },\n        global_keys: { busy: \"lift_busy_A\", controller: \"lift_ctrl_A\" }\n    },\n    \"B\": {\n        robot_addr: { floor: 10, heartbeat: 11, status: 12, command: 13, door: 14, target: 16 },\n        global_keys: { busy: \"lift_busy_B\", controller: \"lift_ctrl_B\" }\n    }\n};\nglobal.set('LiftConfig', liftConfigObj);\n\nlet outMsg = {\n    topic: \"CONFIG_UPDATE\",\n    payload: {\n        type: \"config\",\n        data: cfg\n    }\n};\n\nlet connUpdateMsg = {\n    device_ip: \"192.168.1.200\",\n    device_port: 4196,\n    robot_ip: cfg.robot_ip,\n    robot_port: cfg.robot_port\n};\n\nreturn [outMsg, connUpdateMsg];",
+        "outputs": 2,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 700,
+        "y": 180,
+        "wires": [
+            [
+                "41ef988c725fb0d2"
+            ],
+            [
+                "df83dcb6c7dcf153"
+            ]
+        ]
+    },
+    {
+        "id": "df83dcb6c7dcf153",
+        "type": "link out",
+        "z": "376ce20b8cfdeb15",
+        "g": "5ca85ff7ac5a3b16",
+        "name": "Config to Modbus Connectors",
+        "mode": "link",
+        "links": [
+            "2c010eba20b563d6"
+        ],
+        "x": 915,
+        "y": 280,
+        "wires": []
+    },
+    {
+        "id": "95cca58f431ed758",
+        "type": "link in",
+        "z": "376ce20b8cfdeb15",
+        "g": "5ca85ff7ac5a3b16",
+        "name": "Status to UI Template",
+        "links": [
+            "2e75be482906d72a"
+        ],
+        "x": 785,
+        "y": 120,
+        "wires": [
+            [
+                "41ef988c725fb0d2"
+            ]
+        ]
+    },
+    {
+        "id": "41ef988c725fb0d2",
+        "type": "ui-template",
+        "z": "376ce20b8cfdeb15",
+        "g": "5ca85ff7ac5a3b16",
+        "group": "018609c93ad422ec",
+        "page": "",
+        "ui": "",
+        "name": "Elevator Controls & Configuration Box",
+        "order": 1,
+        "width": 12,
+        "height": 0,
+        "format": "<template>\n  <v-card class=\"pa-4 pa-md-6 rounded-xl bg-grey-lighten-4\" flat border>\n    <v-row align=\"stretch\" class=\"match-height\">\n      \n      <!-- ========================================== -->\n      <!-- LEFT COLUMN: LIVE STATUS & CONTROLS -->\n      <!-- ========================================== -->\n      <v-col cols=\"12\" md=\"6\" class=\"d-flex flex-column\">\n        <v-card class=\"pa-5 rounded-lg d-flex flex-column h-100 bg-white transition-swing\" \n                :style=\"telem.is_recovering ? 'border: 2px solid #ef4444 !important; box-shadow: 0 0 15px rgba(239, 68, 68, 0.25) !important;' : ''\"\n                elevation=\"1\" border>\n          \n          <!-- Header -->\n          <div class=\"d-flex align-center justify-space-between mb-4\">\n            <div class=\"d-flex align-center gap-2\">\n              <span class=\"text-h6 font-weight-black text-blue-grey-darken-3\">Elevator Status</span>\n            </div>\n            \n            <!-- Robot IP -->\n            <v-chip size=\"small\" \n                    color=\"light-green-lighten-4\" \n                    class=\"font-weight-bold text-green-darken-4\" \n                    variant=\"flat\">\n              RDS IP: {{ config.robot_ip }}:{{ config.robot_port }}\n            </v-chip>\n          </div>\n\n          <!-- Red Alert Banner on Error (Sleek, No Clipping, Auto Layout) -->\n          <div v-if=\"telem.is_recovering\" \n               class=\"pa-3 mb-4 rounded-lg d-flex align-center justify-space-between text-white\" \n               style=\"background: #ef4444; border: 1px solid #dc2626; box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3);\">\n            <div class=\"d-flex align-center gap-2\">\n              <v-icon color=\"white\" size=\"small\">mdi-alert-circle</v-icon>\n              <span class=\"font-weight-bold text-caption text-sm-body-2\">\n                Door closed early!\n              </span>\n            </div>\n            <v-chip size=\"x-small\" color=\"white\" class=\"text-red-darken-4 font-weight-black\">\n              RECOVERING\n            </v-chip>\n          </div>\n          \n          <v-divider class=\"mb-5\"></v-divider>\n\n          <!-- Metric Cards -->\n          <v-row dense class=\"mb-4\">\n            \n            <!-- Station ID + Car Floor + Modbus Device IP -->\n            <v-col cols=\"12\" sm=\"4\">\n              <v-card class=\"pa-4 text-center rounded-lg h-100 d-flex flex-column justify-center\" \n                      style=\"background: #fffbeb; border: 1px solid #fde68a;\" flat>\n                <div class=\"text-caption font-weight-bold text-blue-grey-darken-1 mb-1\">STATION ID</div>\n                <div class=\"text-h3 font-weight-black text-amber-darken-4 my-1\">\n                  {{ config.lift_id }}{{ config.floor_name }}\n                </div>\n                <div class=\"text-caption text-blue-grey font-weight-bold mt-1\" style=\"font-size: 0.68rem; opacity: 0.85;\">\n                  Device: {{ config.device_ip }}:{{ config.device_port }}\n                </div>\n              </v-card>\n            </v-col>\n\n            <!-- Status -->\n            <v-col cols=\"12\" sm=\"4\">\n              <v-card class=\"pa-4 text-center rounded-lg h-100 d-flex flex-column justify-center\" \n                      style=\"background: #eff6ff; border: 1px solid #bfdbfe;\" flat>\n                <div class=\"text-caption font-weight-bold text-blue-grey-darken-1 mb-1\">STATUS</div>\n                <div class=\"text-h5 font-weight-black text-blue-darken-3 my-1\">\n                  {{ safeState }}\n                </div>\n                <div class=\"text-caption text-blue-grey\" style=\"font-size: 0.72rem;\">\n                  {{ telem.is_connected ? 'System Online' : 'Device Disconnected' }}\n                </div>\n              </v-card>\n            </v-col>\n\n            <!-- Door Status -->\n            <v-col cols=\"12\" sm=\"4\">\n              <v-card class=\"pa-4 text-center rounded-lg h-100 d-flex flex-column justify-center transition-swing\" \n                      :style=\"telem.is_recovering ? 'background:#fee2e2; border:2px solid #ef4444;' : (telem.door_is_open ? 'background:#ecfdf5; border:1px solid #a7f3d0;' : 'background:#fef2f2; border:1px solid #fecaca;')\" flat>\n                <div class=\"text-caption font-weight-bold text-blue-grey-darken-1 mb-2\">DOOR STATUS</div>\n                <div>\n                  <v-chip :color=\"telem.is_recovering ? 'error' : telem.door_color\" class=\"font-weight-bold px-3 text-body-2\" variant=\"elevated\">\n                    {{ telem.is_recovering ? 'ERROR/CLOSED' : telem.door_text }}\n                  </v-chip>\n                </div>\n                <div class=\"text-caption mt-2\" :class=\"telem.is_recovering ? 'text-error font-weight-bold' : 'text-blue-grey'\" style=\"font-size: 0.7rem;\">\n                  {{ telem.is_recovering ? 'Closed Early!' : (!telem.is_connected ? 'Device Offline' : (telem.door_is_open ? 'Sensors Open (0)' : 'Sensors Closed (1)')) }}\n                </div>\n              </v-card>\n            </v-col>\n          </v-row>\n\n          <!-- Elevator Specs (โชว์เฉพาะ Pulse Count) -->\n          <v-card class=\"pa-4 rounded-lg mb-4 bg-grey-lighten-4\" border flat>\n            <div class=\"d-flex justify-center align-center text-caption text-blue-grey-darken-1 font-weight-medium\">\n              <div class=\"text-body-2\"><b>Pulse Count:</b>\n                <span class=\"text-blue-grey-darken-4 font-weight-bold ml-1\">{{ config.pulse_count }} cycles</span>\n              </div>\n            </div>\n          </v-card>\n\n          <v-spacer></v-spacer>\n\n          <!-- Manual Controls -->\n          <div class=\"mt-2\">\n            <div class=\"text-caption font-weight-bold text-blue-grey-darken-1 mb-3 text-center\">\n              MANUAL CONTROLS\n            </div>\n            <v-row dense>\n              <v-col cols=\"6\">\n                <v-btn block size=\"large\" color=\"primary\" variant=\"flat\" class=\"font-weight-bold rounded-lg\" @click=\"sendAction('1')\">\n                  UP\n                </v-btn>\n              </v-col>\n              <v-col cols=\"6\">\n                <v-btn block size=\"large\" color=\"primary\" variant=\"flat\" class=\"font-weight-bold rounded-lg\" @click=\"sendAction('2')\">\n                  DOWN\n                </v-btn>\n              </v-col>\n              <v-col cols=\"12\">\n                <v-btn block size=\"large\" color=\"error\" variant=\"tonal\" class=\"font-weight-bold rounded-lg mt-1\" @click=\"sendAction('0')\">\n                  RESET / STOP\n                </v-btn>\n              </v-col>\n            </v-row>\n          </div>\n        </v-card>\n      </v-col>\n\n      <!-- ========================================== -->\n      <!-- RIGHT COLUMN: CONFIGURATION MANAGER -->\n      <!-- ========================================== -->\n      <v-col cols=\"12\" md=\"6\" class=\"d-flex flex-column\">\n        <v-card class=\"pa-5 rounded-lg d-flex flex-column h-100 bg-white\" elevation=\"1\" border>\n          \n          <!-- Header -->\n          <div class=\"d-flex align-center justify-space-between mb-4\">\n            <span class=\"text-h6 font-weight-black text-blue-grey-darken-3\">Configuration</span>\n            <v-fade-transition>\n              <v-chip v-if=\"savedAlert\" size=\"small\" color=\"success\" class=\"font-weight-bold\" variant=\"elevated\">\n                Saved!\n              </v-chip>\n            </v-fade-transition>\n          </div>\n          \n          <v-divider class=\"mb-5\"></v-divider>\n\n          <!-- Configuration Form -->\n          <v-form @submit.prevent=\"saveConfig\" class=\"d-flex flex-column h-100\">\n            \n            <div class=\"text-subtitle-2 font-weight-bold text-blue-grey mb-3\">General Settings</div>\n            <v-row dense class=\"mb-3\">\n              <v-col cols=\"6\">\n                <v-select v-model=\"config.lift_id\" :items=\"['A', 'B']\" label=\"Elevator ID\" \n                          density=\"comfortable\" variant=\"outlined\" hide-details></v-select>\n              </v-col>\n              <v-col cols=\"6\">\n                <v-text-field v-model=\"config.floor_name\" label=\"Station Floor\" placeholder=\"e.g. 1, 2, 3, 4\" \n                              density=\"comfortable\" variant=\"outlined\" hide-details></v-text-field>\n              </v-col>\n            </v-row>\n\n            <div class=\"text-subtitle-2 font-weight-bold text-blue-grey mb-3 mt-2\">Network Settings (Robot / RDS)</div>\n            <v-row dense class=\"mb-4\">\n              <v-col cols=\"8\">\n                <v-text-field v-model=\"config.robot_ip\" label=\"RDS IP\" placeholder=\"e.g. 192.168.10.5\" \n                              density=\"comfortable\" variant=\"outlined\" hide-details></v-text-field>\n              </v-col>\n              <v-col cols=\"4\">\n                <v-text-field v-model.number=\"config.robot_port\" label=\"Port\" type=\"number\" \n                              density=\"comfortable\" variant=\"outlined\" hide-details></v-text-field>\n              </v-col>\n            </v-row>\n\n            <div class=\"text-subtitle-2 font-weight-bold text-blue-grey mb-3 mt-1\">Operation Settings</div>\n            <v-text-field v-model.number=\"config.pulse_count\" label=\"Door Pulse Count Cycles\" type=\"number\" \n                          density=\"comfortable\" variant=\"outlined\" hide-details></v-text-field>\n\n            <v-spacer></v-spacer>\n\n            <v-btn type=\"submit\" color=\"primary\" block size=\"large\" class=\"font-weight-bold rounded-lg mt-5\" \n                   elevation=\"2\" :loading=\"isSaving\">\n              Save Settings to config.json\n            </v-btn>\n          </v-form>\n\n        </v-card>\n      </v-col>\n\n    </v-row>\n  </v-card>\n</template>\n\n<script>\nexport default {\n  data() {\n    return {\n      isSaving: false,\n      savedAlert: false,\n      configLoaded: false,\n      config: {\n        lift_id: 'A',\n        floor_name: '1',\n        robot_ip: '192.168.10.5',\n        robot_port: 502,\n        device_ip: '192.168.1.200',\n        device_port: 4196,\n        pulse_count: 5\n      },\n      telem: {\n        floor: 1,\n        door_is_open: false,\n        door_text: 'CLOSED',\n        door_color: 'error',\n        state: 'IDLE',\n        pulse_progress: '',\n        is_recovering: false,\n        is_connected: true\n      }\n    }\n  },\n  computed: {\n    safeState() {\n      if (!this.telem || !this.telem.state) return 'OFFLINE';\n      return String(this.telem.state);\n    }\n  },\n  watch: {\n    msg: {\n      handler(newMsg) {\n        if (!newMsg || !newMsg.payload) return;\n        let p = newMsg.payload;\n        if (p.type === 'telemetry' || p.floor !== undefined) {\n          Object.assign(this.telem, p);\n          if (p.config && !this.configLoaded) {\n            Object.assign(this.config, p.config);\n            this.config.device_ip = '192.168.1.200';\n            this.config.device_port = 4196;\n            this.configLoaded = true;\n          }\n        } else if (p.type === 'config' || p.data) {\n          let c = p.data || p;\n          Object.assign(this.config, c);\n          this.config.device_ip = '192.168.1.200';\n          this.config.device_port = 4196;\n          this.configLoaded = true;\n        }\n      },\n      immediate: true,\n      deep: true\n    }\n  },\n  methods: {\n    sendAction(cmd) {\n      this.send({\n        topic: \"COMMAND\",\n        payload: { action: cmd }\n      });\n    },\n    saveConfig() {\n      this.isSaving = true;\n      let toSave = {\n        floor_name: String(this.config.floor_name).trim(),\n        lift_id: String(this.config.lift_id).toUpperCase(),\n        robot_ip: String(this.config.robot_ip).trim(),\n        robot_port: Number(this.config.robot_port || 502),\n        device_ip: \"192.168.1.200\",\n        device_port: 4196,\n        waveshare: {\n          ip: \"192.168.1.200\",\n          port: 4196,\n          unit_id: 1,\n          door_sensor_input: 0,\n          door_sensor_invert: false,\n          manual_up_input: 1,\n          manual_down_input: 2,\n          button_active_low: false,\n          up_solenoid_coil: 0,\n          down_solenoid_coil: 1,\n          up_indicator_coil: 2,\n          down_indicator_coil: 3,\n          idel_status_coil: 5,\n          use_status_coil: 6,\n          error_status_coil: 7\n        },\n        addr: {\n          robot_port_502: {\n            floor: (this.config.lift_id === 'B' ? 10 : 0),\n            heartbeat: (this.config.lift_id === 'B' ? 11 : 1),\n            lift_status: (this.config.lift_id === 'B' ? 12 : 2),\n            command: (this.config.lift_id === 'B' ? 13 : 3),\n            door: (this.config.lift_id === 'B' ? 14 : 4),\n            call_target: (this.config.lift_id === 'B' ? 16 : 6)\n          }\n        },\n        settings: {\n          pulse_count: Number(this.config.pulse_count)\n        }\n      };\n\n      this.send({\n        topic: \"SAVE_CONFIG\",\n        payload: toSave\n      });\n\n      setTimeout(() => {\n        this.isSaving = false;\n        this.savedAlert = true;\n        setTimeout(() => { this.savedAlert = false; }, 3000);\n      }, 500);\n    }\n  }\n}\n</script>\n\n<style scoped>\n.transition-swing {\n  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.5, 1);\n}\n</style>",
+        "storeOutMessages": true,
+        "passthru": false,
+        "resendOnRefresh": true,
+        "templateScope": "local",
+        "className": "",
+        "x": 1090,
+        "y": 140,
+        "wires": [
+            [
+                "bd137687932f88f9"
+            ]
+        ]
+    },
+    {
+        "id": "bd137687932f88f9",
+        "type": "function",
+        "z": "376ce20b8cfdeb15",
+        "g": "5ca85ff7ac5a3b16",
+        "name": "Route UI Events",
+        "func": "if (msg.topic === \"SAVE_CONFIG\") {\n    let rawObj = msg.payload;\n    let jsonStr = JSON.stringify(rawObj, null, 4);\n    \n    // File Write Msg (Output 1)\n    let fileMsg = { payload: jsonStr };\n    \n    // Engine Direct Update Msg (Output 2)\n    let engineApplyMsg = { topic: \"CONFIG_RELOAD\", payload: rawObj };\n    \n    // Log Msg (Output 3)\n    let logMsg = {\n        topic: `[Config Saved] Settings updated for Lift ${rawObj.lift_id} (Robot: ${rawObj.robot_ip}:${rawObj.robot_port})`,\n        payload: { success: false }\n    };\n    \n    return [fileMsg, engineApplyMsg, null, logMsg];\n} else if (msg.topic === \"COMMAND\") {\n    // Manual Command Msg to Engine (Output 3)\n    let cmd = msg.payload.action;\n    let engineCmdMsg = { command: cmd, source: \"UI_MANUAL\" };\n    let actName = (cmd === '1') ? 'UP Solenoid' : (cmd === '2') ? 'DOWN Solenoid' : 'Release All';\n    let logMsg = {\n        topic: `[Manual Command] ${actName} triggered via UI`,\n        payload: { success: false }\n    };\n    return [null, null, engineCmdMsg, logMsg];\n}\nreturn null;",
+        "outputs": 4,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 900,
+        "y": 380,
+        "wires": [
+            [
+                "7fe5038d15e8746a"
+            ],
+            [
+                "3ed69cd3464e2916"
+            ],
+            [
+                "99f1857745fe594f"
+            ],
+            [
+                "42e1cf40706dcfc4"
+            ]
+        ]
+    },
+    {
+        "id": "7fe5038d15e8746a",
+        "type": "file",
+        "z": "376ce20b8cfdeb15",
+        "g": "5ca85ff7ac5a3b16",
+        "name": "Write config.json",
+        "filename": "/data/config.json",
+        "filenameType": "str",
+        "appendNewline": false,
+        "createDir": true,
+        "overwriteFile": "true",
+        "encoding": "none",
+        "x": 1180,
+        "y": 300,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "7971ececcb7a6f19",
+        "type": "link in",
+        "z": "376ce20b8cfdeb15",
+        "g": "0b5379784eea4ae6",
+        "name": "format log in",
+        "links": [
+            "a30d1f5c0171e383",
+            "590424bfaab69bce",
+            "42e1cf40706dcfc4"
+        ],
+        "x": 95,
+        "y": 540,
+        "wires": [
+            [
+                "cfae9c8452edc745"
+            ]
+        ]
+    },
+    {
+        "id": "cfae9c8452edc745",
+        "type": "function",
+        "z": "376ce20b8cfdeb15",
+        "g": "0b5379784eea4ae6",
+        "name": "Format Log",
+        "func": "let logs = flow.get('activity_logs') || [];\nlet now = new Date().toLocaleString('en-GB', { timeZone: 'Asia/Bangkok', hour12: false });\nlet action = \"\";\n\nif (msg.payload && msg.payload.success === false) {\n    action = msg.topic;\n} else if (msg.topic) {\n    action = msg.topic;\n} else if (typeof msg.payload === 'string') {\n    action = msg.payload;\n} else {\n    action = \"Elevator Event Logged\";\n}\n\nlogs.unshift({ time: now, action: action });\nwhile (logs.length > 50) logs.pop();\nflow.set('activity_logs', logs);\n\nlet uiMsg = { payload: logs };\nlet fileMsg = { payload: `${now},${action}\\n` };\n\nreturn [uiMsg, fileMsg];",
+        "outputs": 2,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 255,
+        "y": 540,
+        "wires": [
+            [
+                "ed0c61eebf8343a7"
+            ],
+            [
+                "6cab124094d6b6c0"
+            ]
+        ]
+    },
+    {
+        "id": "ed0c61eebf8343a7",
+        "type": "ui-template",
+        "z": "376ce20b8cfdeb15",
+        "g": "0b5379784eea4ae6",
+        "group": "ui_group_log_id",
+        "page": "",
+        "ui": "",
+        "name": "History Log UI",
+        "order": 1,
+        "width": 12,
+        "height": 10,
+        "format": "<v-card class=\"d-flex flex-column h-100 rounded-lg bg-white\" border flat>\n  <!-- Header Section -->\n  <div class=\"d-flex justify-space-between align-center pa-4 bg-grey-lighten-4 border-b\">\n    <span class=\"text-subtitle-1 font-weight-black text-blue-grey-darken-3\">\n      Elevator Activity & Status Log\n    </span>\n    <v-btn \n      href=\"/api/elevator/download-log\" \n      target=\"_blank\"\n      color=\"primary\"\n      size=\"small\"\n      variant=\"elevated\"\n      class=\"font-weight-bold rounded-md\"\n      elevation=\"2\"\n    >\n      Download CSV\n    </v-btn>\n  </div>\n\n  <!-- Table Section -->\n  <v-table fixed-header hover class=\"flex-grow-1\">\n    <thead>\n      <tr>\n        <th class=\"text-left text-uppercase text-caption font-weight-bold text-blue-grey bg-grey-lighten-4 border-b\" style=\"width: 220px;\">\n          Timestamp\n        </th>\n        <th class=\"text-left text-uppercase text-caption font-weight-bold text-blue-grey bg-grey-lighten-4 border-b\">\n          Elevator Event / Action\n        </th>\n      </tr>\n    </thead>\n    <tbody>\n      <tr v-if=\"!msg?.payload || !Array.isArray(msg.payload) || msg.payload.length === 0\">\n        <td colspan=\"2\" class=\"text-center pa-8 text-blue-grey-lighten-1 text-body-2\">\n          No elevator activity logged yet.\n        </td>\n      </tr>\n      <tr v-for=\"(log, index) in (Array.isArray(msg?.payload) ? msg.payload : [])\" :key=\"index\">\n        <td class=\"text-blue-grey-darken-1 text-body-2\" style=\"font-family: monospace;\">\n          {{ log.time }}\n        </td>\n        <td class=\"text-blue-grey-darken-4 font-weight-medium text-body-2\">\n          {{ log.action }}\n        </td>\n      </tr>\n    </tbody>\n  </v-table>\n</v-card>",
+        "storeOutMessages": true,
+        "passthru": false,
+        "resendOnRefresh": true,
+        "templateScope": "local",
+        "className": "",
+        "x": 515,
+        "y": 520,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "6cab124094d6b6c0",
+        "type": "file",
+        "z": "376ce20b8cfdeb15",
+        "g": "0b5379784eea4ae6",
+        "name": "Append Log",
+        "filename": "daily_activity_log.csv",
+        "filenameType": "str",
+        "appendNewline": false,
+        "createDir": true,
+        "overwriteFile": "false",
+        "encoding": "none",
+        "x": 505,
+        "y": 570,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "ee18a9b4086914c5",
+        "type": "inject",
+        "z": "376ce20b8cfdeb15",
+        "g": "0b5379784eea4ae6",
+        "name": "Midnight Reset",
+        "props": [
+            {
+                "p": "payload"
+            }
+        ],
+        "repeat": "",
+        "crontab": "00 00 * * *",
+        "once": false,
+        "payload": "Time,Action\n",
+        "payloadType": "str",
+        "x": 255,
+        "y": 630,
+        "wires": [
+            [
+                "bf3d7041df744850"
+            ]
+        ]
+    },
+    {
+        "id": "bf3d7041df744850",
+        "type": "file",
+        "z": "376ce20b8cfdeb15",
+        "g": "0b5379784eea4ae6",
+        "name": "Overwrite Log (New Day)",
+        "filename": "daily_activity_log.csv",
+        "filenameType": "str",
+        "appendNewline": false,
+        "createDir": true,
+        "overwriteFile": "true",
+        "encoding": "none",
+        "x": 525,
+        "y": 630,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "2c010eba20b563d6",
+        "type": "link in",
+        "z": "376ce20b8cfdeb15",
+        "g": "73ebe9b3f20585b0",
+        "name": "Dynamic Modbus Connectors",
+        "links": [
+            "df83dcb6c7dcf153"
+        ],
+        "x": 755,
+        "y": 540,
+        "wires": [
+            [
+                "58fe944e28c7e74f"
+            ]
+        ]
+    },
+    {
+        "id": "58fe944e28c7e74f",
+        "type": "function",
+        "z": "376ce20b8cfdeb15",
+        "g": "73ebe9b3f20585b0",
+        "name": "Build Modbus Connectors",
+        "func": "const devIp = \"192.168.1.200\";\nconst devPort = 4196;\nlet robIp = msg.robot_ip || \"192.168.10.5\";\nlet robPort = Number(msg.robot_port || 502);\n\nlet wsConnMsg = {\n    payload: {\n        connectorType: 'TCP',\n        tcpHost: devIp,\n        tcpPort: devPort,\n        tcpType: 'DEFAULT',\n        unitId: 1,\n        clientTimeout: 1500,\n        reconnectTimeout: 2000\n    }\n};\n\nlet robConnMsg = {\n    payload: {\n        connectorType: 'TCP',\n        tcpHost: robIp,\n        tcpPort: robPort,\n        tcpType: 'DEFAULT',\n        unitId: 1,\n        clientTimeout: 1500,\n        reconnectTimeout: 2000\n    }\n};\n\nreturn [wsConnMsg, robConnMsg];",
+        "outputs": 2,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 960,
+        "y": 540,
+        "wires": [
+            [
+                "06d3acdd41093454"
+            ],
+            [
+                "b65ca6266fd1ae57"
+            ]
+        ]
+    },
+    {
+        "id": "06d3acdd41093454",
+        "type": "modbus-flex-connector",
+        "z": "376ce20b8cfdeb15",
+        "g": "73ebe9b3f20585b0",
+        "name": "Waveshare LAN Connector (4196)",
+        "server": "aafad9b940ec2d94",
+        "emptyMsgOnFail": true,
+        "x": 1250,
+        "y": 520,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "b65ca6266fd1ae57",
+        "type": "modbus-flex-connector",
+        "z": "376ce20b8cfdeb15",
+        "g": "73ebe9b3f20585b0",
+        "name": "Robot PLC Connector (502)",
+        "showStatusActivities": false,
+        "showErrors": false,
+        "server": "0c441e386cd21642",
+        "emptyMsgOnFail": true,
+        "configMsgOnChange": false,
+        "x": 1230,
+        "y": 580,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "007abc601b1cfbe7",
+        "type": "modbus-read",
+        "z": "376ce20b8cfdeb15",
+        "g": "3fa38e3335cbceee",
+        "name": "Read Waveshare Discrete Inputs (FC2)",
+        "topic": "WAVESHARE_INPUTS",
+        "showStatusActivities": true,
+        "logIOActivities": false,
+        "showErrors": true,
+        "showWarnings": true,
+        "unitid": "1",
+        "dataType": "Input",
+        "adr": "0",
+        "quantity": "8",
+        "rate": "500",
+        "rateUnit": "ms",
+        "delayOnStart": false,
+        "enableDeformedMessages": false,
+        "startDelayTime": "",
+        "server": "aafad9b940ec2d94",
+        "useIOFile": false,
+        "ioFile": "",
+        "useIOForPayload": false,
+        "emptyMsgOnFail": false,
+        "x": 250,
+        "y": 780,
+        "wires": [
+            [
+                "67b6e8cb62e4122f"
+            ],
+            []
+        ]
+    },
+    {
+        "id": "e5343b8b574dd3ff",
+        "type": "modbus-read",
+        "z": "376ce20b8cfdeb15",
+        "g": "3fa38e3335cbceee",
+        "name": "Read Robot Registers (FC3)",
+        "topic": "ROBOT_REGISTERS",
+        "showStatusActivities": true,
+        "logIOActivities": false,
+        "showErrors": false,
+        "showWarnings": true,
+        "unitid": "1",
+        "dataType": "HoldingRegister",
+        "adr": "0",
+        "quantity": "24",
+        "rate": "500",
+        "rateUnit": "ms",
+        "delayOnStart": false,
+        "enableDeformedMessages": false,
+        "startDelayTime": "",
+        "server": "0c441e386cd21642",
+        "useIOFile": false,
+        "ioFile": "",
+        "useIOForPayload": false,
+        "emptyMsgOnFail": false,
+        "x": 280,
+        "y": 840,
+        "wires": [
+            [
+                "67b6e8cb62e4122f"
+            ],
+            []
+        ]
+    },
+    {
+        "id": "15e83a7be49c711f",
+        "type": "link in",
+        "z": "376ce20b8cfdeb15",
+        "g": "3fa38e3335cbceee",
+        "name": "Commands to Engine",
+        "links": [
+            "0aa7f1882736044f",
+            "99f1857745fe594f"
+        ],
+        "x": 395,
+        "y": 900,
+        "wires": [
+            [
+                "67b6e8cb62e4122f"
+            ]
+        ]
+    },
+    {
+        "id": "67b6e8cb62e4122f",
+        "type": "function",
+        "z": "376ce20b8cfdeb15",
+        "g": "3fa38e3335cbceee",
+        "name": "Full Elevator Mission State Machine",
+        "func": "// === ดึงการตั้งค่า Dynamic จากระบบ ===\nlet raw_cfg = global.get(\"lift_config\") || {};\nconst LIFT_ID = String(raw_cfg.lift_id || \"A\").toUpperCase();\nconst FLOOR = Number(raw_cfg.floor_name || 1);\nconst MAX_PULSES = Number(raw_cfg.pulse_count || 3);\nconst MANUAL_COOLDOWN_MS = 2000; // ล็อคป้องกันการกดรัว / กดค้าง 2 วินาที\n// =========================================================\n\nlet config = global.get(\"LiftConfig\");\nif (!config) {\n    config = {\n        \"A\": {\n            robot_addr: { floor: 0, heartbeat: 1, status: 2, command: 3, door: 4, target: 6 },\n            global_keys: { busy: \"lift_busy_A\", controller: \"lift_ctrl_A\" }\n        },\n        \"B\": {\n            robot_addr: { floor: 10, heartbeat: 11, status: 12, command: 13, door: 14, target: 16 },\n            global_keys: { busy: \"lift_busy_B\", controller: \"lift_ctrl_B\" }\n        }\n    };\n    global.set(\"LiftConfig\", config);\n}\nlet conf = config[LIFT_ID] || (LIFT_ID === \"B\" ? config[\"B\"] : config[\"A\"]);\n\nlet now = Date.now();\n\n// -------------------------------------------------------------\n// 0. ตรวจจับการเปลี่ยน IP / Config Reload -> รีเซ็ต Connection ทันที\n// -------------------------------------------------------------\nif (msg.topic === \"CONFIG_RELOAD\" || msg.topic === \"SAVE_CONFIG\" || msg.topic === \"CONFIG_UPDATE\") {\n    context.set(\"last_ws_rx\", 0);\n    context.set(\"prev_is_connected\", false);\n    context.set(\"auto_state\", \"IDLE\");\n    global.set(\"robot_floor_\" + LIFT_ID, FLOOR);\n}\n\n// ตัวแปรสถานะ\nlet state = context.get(\"state\") || { up: false, down: false, prev_u: false, prev_d: false };\nlet is_busy = global.get(conf.global_keys.busy) || false;\nlet ctrl = global.get(conf.global_keys.controller) || \"\";\nlet robot_target = global.get(\"robot_target_\" + LIFT_ID) || 0;\n\n// Cooldown Timers สำหรับ Manual Buttons\nlet last_manual_up = context.get(\"last_manual_up\") || 0;\nlet last_manual_down = context.get(\"last_manual_down\") || 0;\n\n// Pulse State Machine สำหรับโหมด Auto\nlet auto_state = context.get(\"auto_state\") || \"IDLE\"; // IDLE, CALLING, PULSING, DONE, COOLDOWN\nlet current_pulse = context.get(\"current_pulse\") || 0;\nlet pulse_step = context.get(\"pulse_step\") || \"ON\";\nlet pulse_timer = context.get(\"pulse_timer\") || 0;\nlet is_recovering = context.get(\"is_recovering\") || false;\nlet last_pulse_step = context.get(\"last_pulse_step\") || \"\";\n\nlet trigger_up = false, trigger_down = false, light_clr = false;\nlet out_hw = null, out_rob = null, out_dbg = null;\nlet log_entries = [];\n\nfunction addLog(text) {\n    log_entries.push(text);\n}\n\n// -------------------------------------------------------------\n// 0.1 คำสั่งจาก Manual UI Dashboard / API (พร้อมระบบ Cooldown 2s)\n// -------------------------------------------------------------\nif (msg.command !== undefined) {\n    let c = String(msg.command).trim();\n    if (c === \"1\" || c === \"UP\" || c === \"CALL_UP\" || c === \"call\" || c === \"open\") {\n        if (now - last_manual_up >= MANUAL_COOLDOWN_MS) {\n            state.up = true;\n            trigger_up = true;\n            last_manual_up = now;\n            context.set(\"last_manual_up\", now);\n            addLog(`[Manual UI] Lift ${LIFT_ID} Called UP (Coil 0 Solenoid + Coil 2 Light)`);\n        } else {\n            addLog(`[Manual Rate-Limit] UP button ignored (Cooldown active: ${Math.ceil((MANUAL_COOLDOWN_MS - (now - last_manual_up)) / 1000)}s left)`);\n        }\n    } else if (c === \"2\" || c === \"DOWN\" || c === \"CALL_DOWN\") {\n        if (now - last_manual_down >= MANUAL_COOLDOWN_MS) {\n            state.down = true;\n            trigger_down = true;\n            last_manual_down = now;\n            context.set(\"last_manual_down\", now);\n            addLog(`[Manual UI] Lift ${LIFT_ID} Called DOWN (Coil 1 Solenoid + Coil 3 Light)`);\n        } else {\n            addLog(`[Manual Rate-Limit] DOWN button ignored (Cooldown active: ${Math.ceil((MANUAL_COOLDOWN_MS - (now - last_manual_down)) / 1000)}s left)`);\n        }\n    } else if (c === \"0\" || c === \"STOP\" || c === \"CLOSE\" || c === \"RELEASE\") {\n        state.up = false;\n        state.down = false;\n        light_clr = true;\n        auto_state = \"IDLE\";\n        current_pulse = 0;\n        is_recovering = false;\n        context.set(\"auto_state\", \"IDLE\");\n        context.set(\"current_pulse\", 0);\n        context.set(\"is_recovering\", false);\n        addLog(`[Manual UI] Lift ${LIFT_ID} All Relays Released / Stopped`);\n    }\n}\n\n// -------------------------------------------------------------\n// 0.2 ตรวจจับข้อมูล Holding Registers จาก Robot (Port 502)\n// -------------------------------------------------------------\nif (msg.topic === \"ROBOT_REGISTERS\" || (msg.payload && Array.isArray(msg.payload) && typeof msg.payload[0] === \"number\")) {\n    let target_addr = conf.robot_addr.target || (LIFT_ID === \"B\" ? 16 : 6);\n    if (msg.payload.length > target_addr) {\n        let incoming_target = Number(msg.payload[target_addr] || 0);\n        if (auto_state !== \"COOLDOWN\") {\n            robot_target = incoming_target;\n            global.set(\"robot_target_\" + LIFT_ID, robot_target);\n        }\n    }\n}\n\n// -------------------------------------------------------------\n// ตรวจสอบ Inputs จากบอร์ด Waveshare (Port 4196) & อัปเดต Heartbeat Watchdog\n// -------------------------------------------------------------\nlet inputs = msg.payload;\nlet is_ws_inputs = (msg.topic === \"WAVESHARE_INPUTS\") || (Array.isArray(inputs) && typeof inputs[0] === \"boolean\");\n\nlet door_open = context.get(\"prev_door\") || false;\nlet btn_up = false;\nlet btn_down = false;\n\nif (is_ws_inputs && Array.isArray(inputs) && inputs.length >= 3) {\n    context.set(\"last_ws_rx\", now);\n    door_open = (inputs[0] === 0 || inputs[0] === false);\n    btn_up = Boolean(inputs[1]);\n    btn_down = Boolean(inputs[2]);\n}\n\n// ตรวจสอบสถานะการเชื่อมต่อ (Connected vs Disconnected)\nlet last_rx = context.get(\"last_ws_rx\") || 0;\nlet is_connected = (now - last_rx) < 2500 && last_rx > 0;\nlet prev_conn = context.get(\"prev_is_connected\");\n\nif (is_connected !== prev_conn) {\n    context.set(\"prev_is_connected\", is_connected);\n    if (!is_connected) {\n        addLog(`[COMMUNICATION ERROR] Disconnected from Device (${raw_cfg.device_ip || '192.168.1.200'}:${raw_cfg.device_port || 4196})`);\n    } else {\n        addLog(`[COMMUNICATION SUCCESS] Connected to Device (${raw_cfg.device_ip || '192.168.1.200'}:${raw_cfg.device_port || 4196})`);\n    }\n}\n\n// --- 1. โหมด Manual (ปุ่มกดหน้าบานลิฟต์ พร้อมระบบกันกดค้าง & กดรัว 2 วินาที) ---\nif (is_connected && !(is_busy && ctrl === \"ROBOT\")) {\n    if (btn_up && !state.prev_u) {\n        if (now - last_manual_up >= MANUAL_COOLDOWN_MS) {\n            state.up = true;\n            trigger_up = true;\n            last_manual_up = now;\n            context.set(\"last_manual_up\", now);\n            addLog(`[Physical Button] UP Button (Input 1) Pressed -> Lift ${LIFT_ID}`);\n        } else {\n            addLog(`[Rate-Limit] Physical UP button press ignored (2s cooldown)`);\n        }\n    }\n    if (btn_down && !state.prev_d) {\n        if (now - last_manual_down >= MANUAL_COOLDOWN_MS) {\n            state.down = true;\n            trigger_down = true;\n            last_manual_down = now;\n            context.set(\"last_manual_down\", now);\n            addLog(`[Physical Button] DOWN Button (Input 2) Pressed -> Lift ${LIFT_ID}`);\n        } else {\n            addLog(`[Rate-Limit] Physical DOWN button press ignored (2s cooldown)`);\n        }\n    }\n}\nstate.prev_u = btn_up;\nstate.prev_d = btn_down;\n\n// --- 2. โหมด Auto พร้อมระบบ Pulse Count & Error Recovery ---\nif (is_connected) {\n    let target_floor_num = Number(robot_target || 0);\n\n    // ปลด Cooldown หลังจบงาน 2 วินาที (ป้องกัน Double-Trigger)\n    if (auto_state === \"COOLDOWN\") {\n        if (now - pulse_timer >= 2000) {\n            auto_state = \"IDLE\";\n            context.set(\"auto_state\", \"IDLE\");\n        }\n    }\n\n    // หุ่นยนต์สั่งเรียกลิฟต์เป้าหมาย\n    if (target_floor_num === FLOOR && target_floor_num > 0 && auto_state === \"IDLE\" && (!is_busy || ctrl === \"ROBOT\")) {\n        global.set(conf.global_keys.busy, true);\n        global.set(conf.global_keys.controller, \"ROBOT\");\n\n        // --- คำนวณทิศทางการเรียกลิฟต์ (UP / DOWN) ---\n        let current_lift_floor = global.get(\"robot_floor_\" + LIFT_ID) || FLOOR;\n        let call_dir = \"UP\";\n        \n        if (current_lift_floor === 1) {\n            call_dir = \"UP\"; // ชั้น 1 สั่งขึ้นได้อย่างเดียว\n        } else if (current_lift_floor === 4) {\n            call_dir = \"DOWN\"; // ชั้น 4 สั่งลงได้อย่างเดียว\n        } else {\n            // ชั้นอื่นๆ (เช่น 2, 3) อิงจากชั้นปัจจุบันและเป้าหมาย\n            if (target_floor_num >= current_lift_floor) {\n                call_dir = \"UP\";\n            } else {\n                call_dir = \"DOWN\";\n            }\n        }\n        \n        // บันทึกทิศทางไว้ให้โหมด PULSING ใช้ต่อ\n        context.set(\"auto_call_dir\", call_dir);\n        // ---------------------------------------\n\n        if (door_open) {\n            auto_state = \"PULSING\";\n            current_pulse = 0;\n            pulse_step = \"ON\";\n            last_pulse_step = \"\";\n            pulse_timer = now;\n            is_recovering = false;\n            addLog(`[Auto Robot] Door already OPEN at Floor ${FLOOR} -> Starting ${MAX_PULSES} Pulses (Direction: ${call_dir})`);\n        } else {\n            auto_state = \"CALLING\";\n            current_pulse = 0;\n            is_recovering = false;\n            \n            // สั่งงานรีเลย์ตามทิศทางที่ประมวลผลไว้\n            if (call_dir === \"UP\") {\n                state.up = true;\n                trigger_up = true;\n                addLog(`[Auto Robot] Target Floor ${FLOOR} (Current Lift is at ${current_lift_floor}) -> Calling Lift UP`);\n            } else {\n                state.down = true;\n                trigger_down = true;\n                addLog(`[Auto Robot] Target Floor ${FLOOR} (Current Lift is at ${current_lift_floor}) -> Calling Lift DOWN`);\n            }\n        }\n    } else if (target_floor_num !== FLOOR && auto_state === \"IDLE\") {\n        auto_state = \"IDLE\";\n        is_recovering = false;\n    }\n\n    // เมื่อลิฟต์มาถึงและประตูเปิดออก -> เริ่มเข้าสู่กระบวนการ Pulse\n    if (auto_state === \"CALLING\" && door_open) {\n        auto_state = \"PULSING\";\n        current_pulse = 0;\n        pulse_step = \"ON\";\n        last_pulse_step = \"\";\n        pulse_timer = now;\n        state.up = false;\n        state.down = false; // เคลียร์สถานะ manual relay\n        light_clr = true;\n        let c_dir = context.get(\"auto_call_dir\") || \"UP\";\n        addLog(`[Auto Robot] Lift ${LIFT_ID} Door OPEN detected -> Starting Hold-Open Sequence (${MAX_PULSES} Pulses, Dir: ${c_dir})`);\n    }\n\n    // การทำงานในรอบ Pulse Sequence\n    if (auto_state === \"PULSING\") {\n        // ดึงทิศทางที่เคยตัดสินใจไว้ในสถานะ CALLING\n        let current_dir = context.get(\"auto_call_dir\") || \"UP\";\n        // ถ้าเป็น UP ให้พัลส์ที่ Coil 0, ถ้าเป็น DOWN ให้พัลส์ที่ Coil 1\n        let pulse_on_val = (current_dir === \"DOWN\") ? [false, true, false, false] : [true, false, false, false];\n        let pulse_off_val = [false, false, false, false];\n\n        if (!door_open) {\n            if (!is_recovering) {\n                is_recovering = true;\n                pulse_timer = now;\n                last_pulse_step = \"\";\n                addLog(`[MISSION ERROR] Elevator ${LIFT_ID} CLOSED prematurely after pulse ${current_pulse}/${MAX_PULSES}!`);\n            }\n\n            let elapsed = now - pulse_timer;\n            if (elapsed < 1000) {\n                out_hw = out_hw || [];\n                out_hw.push({ payload: { value: pulse_on_val, fc: 15, unitid: 1, address: 0, quantity: 4 } });\n            } else if (elapsed < 1500) {\n                out_hw = out_hw || [];\n                out_hw.push({ payload: { value: pulse_off_val, fc: 15, unitid: 1, address: 0, quantity: 4 } });\n            } else {\n                pulse_timer = now;\n            }\n\n        } else {\n            if (is_recovering) {\n                is_recovering = false;\n                pulse_step = \"ON\";\n                last_pulse_step = \"\";\n                pulse_timer = now;\n                addLog(`[RECOVERY SUCCESS] Lift ${LIFT_ID} door REOPENED! Resuming pulse ${current_pulse + 1}/${MAX_PULSES}`);\n            }\n\n            let elapsed = now - pulse_timer;\n            if (pulse_step === \"ON\") {\n                if (last_pulse_step !== `ON_${current_pulse}`) {\n                    last_pulse_step = `ON_${current_pulse}`;\n                    out_hw = out_hw || [];\n                    out_hw.push({ payload: { value: pulse_on_val, fc: 15, unitid: 1, address: 0, quantity: 4 } });\n                }\n\n                if (elapsed >= 1000) {\n                    current_pulse++;\n                    pulse_step = \"OFF\";\n                    pulse_timer = now;\n                    addLog(`[Pulse Engine] Lift ${LIFT_ID} Pulse ${current_pulse}/${MAX_PULSES} Completed (Dir: ${current_dir})`);\n                }\n            } else {\n                if (last_pulse_step !== `OFF_${current_pulse}`) {\n                    last_pulse_step = `OFF_${current_pulse}`;\n                    out_hw = out_hw || [];\n                    out_hw.push({ payload: { value: pulse_off_val, fc: 15, unitid: 1, address: 0, quantity: 4 } });\n                }\n\n                if (elapsed >= 500) {\n                    if (current_pulse >= MAX_PULSES) {\n                        auto_state = \"COOLDOWN\";\n                        current_pulse = 0;\n                        is_recovering = false;\n                        pulse_timer = now;\n\n                        robot_target = 0;\n                        global.set(\"robot_target_\" + LIFT_ID, 0);\n\n                        out_rob = out_rob || [];\n                        out_rob.push({ payload: { value: 0, fc: 6, unitid: 1, address: conf.robot_addr.target, quantity: 1 } });\n                        global.set(conf.global_keys.busy, false);\n                        global.set(conf.global_keys.controller, \"\");\n                        addLog(`[MISSION DONE] Completed exactly ${MAX_PULSES} pulses -> Auto Mission Finished for Lift ${LIFT_ID}`);\n                    } else {\n                        pulse_step = \"ON\";\n                        pulse_timer = now;\n                    }\n                }\n            }\n        }\n    }\n}\n\ncontext.set(\"auto_state\", auto_state);\ncontext.set(\"current_pulse\", current_pulse);\ncontext.set(\"pulse_step\", pulse_step);\ncontext.set(\"pulse_timer\", pulse_timer);\ncontext.set(\"is_recovering\", is_recovering);\ncontext.set(\"last_pulse_step\", last_pulse_step);\n\n// --- 3. ประตูเปิดในโหมด Manual (เคลียร์สถานะ) ---\nif (door_open && (state.up || state.down) && auto_state === \"IDLE\") {\n    state.up = false;\n    state.down = false;\n    light_clr = true;\n    addLog(`[Door Event] Lift ${LIFT_ID} Door OPENED -> Cleared Manual Call`);\n}\n\n// --- 4. สั่งงานฮาร์ดแวร์ลิฟต์เมื่อมีการกดปุ่ม Manual / สั่งเรียก Auto ---\nif ((trigger_up || trigger_down || light_clr) && auto_state !== \"PULSING\" && is_connected) {\n    let coils_on = [trigger_up, trigger_down, state.up, state.down];\n    out_hw = out_hw || [];\n    out_hw.push({ payload: { value: coils_on, fc: 15, unitid: 1, address: 0, quantity: 4 } });\n\n    if (trigger_up || trigger_down) {\n        setTimeout(() => {\n            let st = context.get(\"state\") || { up: false, down: false };\n            node.send([{ payload: { value: [false, false, st.up, st.down], fc: 15, unitid: 1, address: 0, quantity: 4 } }, null, null, null]);\n        }, 1000);\n    }\n}\n\n// --- 5. อัปเดตข้อมูลหุ่นยนต์ ---\nlet prev_door = context.get(\"prev_door\");\nif (door_open !== prev_door && is_connected) {\n    context.set(\"prev_door\", door_open);\n    let curr_fl = global.get(\"robot_floor_\" + LIFT_ID) || FLOOR;\n    if (door_open) {\n        curr_fl = FLOOR;\n        global.set(\"robot_floor_\" + LIFT_ID, curr_fl);\n    }\n    let d_stat = door_open ? 1 : 2;\n    out_rob = out_rob || [];\n    out_rob.push({ payload: { value: curr_fl, fc: 6, unitid: 1, address: conf.robot_addr.floor, quantity: 1 } });\n    out_rob.push({ payload: { value: d_stat, fc: 6, unitid: 1, address: conf.robot_addr.status, quantity: 1 } });\n    out_rob.push({ payload: { value: d_stat, fc: 6, unitid: 1, address: conf.robot_addr.door, quantity: 1 } });\n}\n\n// --- 6. ล็อคระบบ (Manual) ร่วมกับชั้นอื่น & คุมไฟสถานะ LED ---\nlet manual_track = global.get(\"manual_track_\" + LIFT_ID) || { 1: false, 2: false, 3: false, 4: false };\nmanual_track[FLOOR] = (state.up || state.down);\nglobal.set(\"manual_track_\" + LIFT_ID, manual_track);\n\nlet any_manual = manual_track[1] || manual_track[2] || manual_track[3] || manual_track[4];\nif (any_manual) {\n    global.set(conf.global_keys.busy, true);\n    global.set(conf.global_keys.controller, \"MANUAL\");\n} else if (ctrl === \"MANUAL\") {\n    global.set(conf.global_keys.busy, false);\n    global.set(conf.global_keys.controller, \"\");\n}\n\n// กำหนดสถานะไฟ Tower Lamp\nlet led = \"NORMAL\";\nif (!is_connected || is_recovering || global.get(\"lift_is_error\")) {\n    led = \"ERROR\";\n} else if (door_open || auto_state === \"CALLING\" || auto_state === \"PULSING\" || any_manual) {\n    led = \"ACTIVE\";\n}\n\nif (led !== context.get(\"prev_led\") && is_connected) {\n    context.set(\"prev_led\", led);\n    let val = (led === \"NORMAL\") ? [true, false, false] : (led === \"ACTIVE\") ? [false, true, false] : [false, false, true];\n    out_hw = out_hw || [];\n    out_hw.push({ payload: { value: val, fc: 15, unitid: 1, address: 5, quantity: 3 } });\n}\n\n// --- 7. จัดรูปแบบสำหรับ Dashboard UI Telemetry ---\nlet current_robot_floor = global.get(\"robot_floor_\" + LIFT_ID) || FLOOR;\nlet telem_payload = {\n    type: \"telemetry\",\n    floor: current_robot_floor,\n    door_is_open: door_open,\n    door_text: !is_connected ? \"OFFLINE\" : (door_open ? \"OPEN\" : \"CLOSED\"),\n    door_color: !is_connected ? \"grey\" : (door_open ? \"success\" : \"error\"),\n    state: !is_connected ? \"DISCONNECTED\" : (is_recovering ? \"ERROR RECOVERY\" : (auto_state === \"PULSING\" ? `PULSING (${current_pulse}/${MAX_PULSES})` : (led === \"NORMAL\" ? \"IDLE\" : led))),\n    pulse_progress: auto_state === \"PULSING\" ? `${current_pulse}/${MAX_PULSES}` : \"\",\n    is_recovering: is_recovering,\n    is_connected: is_connected,\n    lift_id: LIFT_ID,\n    config: raw_cfg\n};\nout_dbg = { payload: telem_payload };\n\ncontext.set(\"state\", state);\n\n// Dispatch outputs\nif (out_hw !== null) {\n    for (let hw_msg of out_hw) {\n        node.send([hw_msg, null, null, null]);\n    }\n}\n\nif (out_rob !== null) {\n    for (let rob_msg of out_rob) {\n        node.send([null, rob_msg, null, null]);\n    }\n}\n\nnode.send([null, null, out_dbg, null]);\n\nif (log_entries.length > 0) {\n    for (let txt of log_entries) {\n        node.send([null, null, null, { topic: txt, payload: { success: true } }]);\n    }\n}\n\nreturn null;",
+        "outputs": 4,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 600,
+        "y": 840,
+        "wires": [
+            [
+                "89afd0a877635ed1"
+            ],
+            [
+                "7dd5d5374b0203d7"
+            ],
+            [
+                "2e75be482906d72a"
+            ],
+            [
+                "a30d1f5c0171e383"
+            ]
+        ]
+    },
+    {
+        "id": "89afd0a877635ed1",
+        "type": "modbus-flex-write",
+        "z": "376ce20b8cfdeb15",
+        "g": "3fa38e3335cbceee",
+        "name": "Write Waveshare Coils (Port 4196)",
+        "server": "aafad9b940ec2d94",
+        "emptyMsgOnFail": true,
+        "x": 940,
+        "y": 760,
+        "wires": [
+            [],
+            []
+        ]
+    },
+    {
+        "id": "7dd5d5374b0203d7",
+        "type": "modbus-flex-write",
+        "z": "376ce20b8cfdeb15",
+        "g": "3fa38e3335cbceee",
+        "name": "Write Robot Regs (Port 502)",
+        "server": "0c441e386cd21642",
+        "emptyMsgOnFail": true,
+        "x": 920,
+        "y": 820,
+        "wires": [
+            [],
+            []
+        ]
+    },
+    {
+        "id": "2e75be482906d72a",
+        "type": "link out",
+        "z": "376ce20b8cfdeb15",
+        "g": "3fa38e3335cbceee",
+        "name": "Telemetry to Dashboard UI",
+        "mode": "link",
+        "links": [
+            "95cca58f431ed758"
+        ],
+        "x": 815,
+        "y": 880,
+        "wires": []
+    },
+    {
+        "id": "a30d1f5c0171e383",
+        "type": "link out",
+        "z": "376ce20b8cfdeb15",
+        "g": "3fa38e3335cbceee",
+        "name": "Engine Log Out",
+        "mode": "link",
+        "links": [
+            "7971ececcb7a6f19"
+        ],
+        "x": 815,
+        "y": 920,
+        "wires": []
+    },
+    {
+        "id": "99f1857745fe594f",
+        "type": "link out",
+        "z": "376ce20b8cfdeb15",
+        "g": "5ca85ff7ac5a3b16",
+        "name": "Manual Cmd Out",
+        "mode": "link",
+        "links": [
+            "15e83a7be49c711f"
+        ],
+        "x": 1115,
+        "y": 360,
+        "wires": []
+    },
+    {
+        "id": "42e1cf40706dcfc4",
+        "type": "link out",
+        "z": "376ce20b8cfdeb15",
+        "g": "5ca85ff7ac5a3b16",
+        "name": "UI Log Out",
+        "mode": "link",
+        "links": [
+            "7971ececcb7a6f19"
+        ],
+        "x": 1115,
+        "y": 400,
+        "wires": []
+    },
+    {
+        "id": "75b5406fc9907251",
+        "type": "inject",
+        "z": "376ce20b8cfdeb15",
+        "g": "3fa38e3335cbceee",
+        "name": "Watchdog Timer (1s)",
+        "props": [
+            {
+                "p": "topic",
+                "vt": "str"
+            }
+        ],
+        "repeat": "1",
+        "crontab": "",
+        "once": true,
+        "onceDelay": 0.5,
+        "topic": "WATCHDOG_TICK",
+        "x": 300,
+        "y": 720,
+        "wires": [
+            [
+                "67b6e8cb62e4122f"
+            ]
+        ]
+    },
+    {
+        "id": "e73ab5665cdfa923",
+        "type": "tab",
+        "label": "REST API & Endpoints",
+        "disabled": false,
+        "info": "Elevator REST API and Diagnostic Endpoints"
+    },
+    {
+        "id": "b2a9126dd02c9d94",
+        "type": "http in",
+        "z": "e73ab5665cdfa923",
+        "name": "GET /api/elevator/status",
+        "url": "/api/elevator/status",
+        "method": "get",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 160,
+        "y": 100,
+        "wires": [
+            [
+                "70735a6f6ede1363"
+            ]
+        ]
+    },
+    {
+        "id": "70735a6f6ede1363",
+        "type": "function",
+        "z": "e73ab5665cdfa923",
+        "name": "Format API Status",
+        "func": "let cfg = global.get('lift_config') || { lift_id: \"A\", floor_name: \"1\", robot_ip: \"192.168.10.5\", robot_port: 502, device_ip: \"192.168.1.200\", device_port: 4196, pulse_count: 5 };\nlet now = new Date().toISOString();\n\nmsg.statusCode = 200;\nmsg.payload = {\n    success: true,\n    lift_id: cfg.lift_id || 'A',\n    floor: Number(cfg.floor_name || 1),\n    robot_ip: cfg.robot_ip || '',\n    robot_port: cfg.robot_port || 502,\n    device_ip: cfg.device_ip || '192.168.1.200',\n    device_port: cfg.device_port || 4196,\n    pulse_count: cfg.pulse_count || 5,\n    timestamp: now\n};\nreturn msg;",
+        "outputs": 1,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 440,
+        "y": 100,
+        "wires": [
+            [
+                "3960d5285b5525b1"
+            ]
+        ]
+    },
+    {
+        "id": "3960d5285b5525b1",
+        "type": "http response",
+        "z": "e73ab5665cdfa923",
+        "name": "",
+        "statusCode": "",
+        "headers": {},
+        "x": 700,
+        "y": 100,
+        "wires": []
+    },
+    {
+        "id": "701d58a1a63cd773",
+        "type": "http in",
+        "z": "e73ab5665cdfa923",
+        "name": "POST /api/elevator/control",
+        "url": "/api/elevator/control",
+        "method": "post",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 170,
+        "y": 180,
+        "wires": [
+            [
+                "a3bd14b5a07de266"
+            ]
+        ]
+    },
+    {
+        "id": "a3bd14b5a07de266",
+        "type": "function",
+        "z": "e73ab5665cdfa923",
+        "name": "Process API Elevator Command",
+        "func": "let p = msg.payload || {};\nlet action = p.action || p.command || \"1\";\nlet cfg = global.get('lift_config') || { lift_id: \"A\" };\n\nlet res = {\n    statusCode: 200,\n    payload: {\n        success: true,\n        message: `Command '${action}' dispatched to Lift ${cfg.lift_id}.`\n    }\n};\n\nlet cmdMsg = { command: action, source: \"API\" };\nlet logMsg = { topic: `[API Command] Sent '${action}' to Lift ${cfg.lift_id}`, payload: { success: true } };\n\nreturn [res, cmdMsg, logMsg];",
+        "outputs": 3,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 470,
+        "y": 180,
+        "wires": [
+            [
+                "1485c53e3761494e"
+            ],
+            [
+                "0aa7f1882736044f"
+            ],
+            [
+                "590424bfaab69bce"
+            ]
+        ]
+    },
+    {
+        "id": "1485c53e3761494e",
+        "type": "http response",
+        "z": "e73ab5665cdfa923",
+        "name": "",
+        "statusCode": "",
+        "headers": {},
+        "x": 700,
+        "y": 160,
+        "wires": []
+    },
+    {
+        "id": "0aa7f1882736044f",
+        "type": "link out",
+        "z": "e73ab5665cdfa923",
+        "name": "API Command Out",
+        "mode": "link",
+        "links": [
+            "15e83a7be49c711f"
+        ],
+        "x": 700,
+        "y": 200,
+        "wires": []
+    },
+    {
+        "id": "590424bfaab69bce",
+        "type": "link out",
+        "z": "e73ab5665cdfa923",
+        "name": "API Log Out",
+        "mode": "link",
+        "links": [
+            "7971ececcb7a6f19"
+        ],
+        "x": 700,
+        "y": 240,
+        "wires": []
+    },
+    {
+        "id": "1623b9fb2f489a9a",
+        "type": "http in",
+        "z": "e73ab5665cdfa923",
+        "name": "GET /api/elevator/download-log",
+        "url": "/api/elevator/download-log",
+        "method": "get",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 190,
+        "y": 300,
+        "wires": [
+            [
+                "b9b0c7d4a4d7e583"
+            ]
+        ]
+    },
+    {
+        "id": "b9b0c7d4a4d7e583",
+        "type": "file in",
+        "z": "e73ab5665cdfa923",
+        "name": "Read Log CSV",
+        "filename": "daily_activity_log.csv",
+        "filenameType": "str",
+        "format": "utf8",
+        "chunk": false,
+        "sendError": true,
+        "encoding": "none",
+        "allProps": false,
+        "x": 440,
+        "y": 300,
+        "wires": [
+            [
+                "493c132a6bea3316"
+            ]
+        ]
+    },
+    {
+        "id": "493c132a6bea3316",
+        "type": "function",
+        "z": "e73ab5665cdfa923",
+        "name": "Set CSV Headers",
+        "func": "let d = new Date();\nd.setHours(d.getHours() + 7);\nlet dateStr = d.toISOString().split('T')[0];\nmsg.headers = {\n    \"Content-Disposition\": `attachment; filename=\"elevator_log_${dateStr}.csv\"`,\n    \"Content-Type\": \"text/csv\"\n};\nreturn msg;",
+        "outputs": 1,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 670,
+        "y": 300,
+        "wires": [
+            [
+                "27c95252af96f09c"
+            ]
+        ]
+    },
+    {
+        "id": "27c95252af96f09c",
+        "type": "http response",
+        "z": "e73ab5665cdfa923",
+        "name": "Download CSV",
+        "statusCode": "200",
+        "headers": {},
+        "x": 900,
+        "y": 300,
+        "wires": []
+    },
+    {
+        "id": "018609c93ad422ec",
+        "type": "ui-group",
+        "name": "Elevator Status, Controls & Configuration",
+        "page": "ui_page_id",
+        "width": "12",
+        "height": "1",
+        "order": 1,
+        "showTitle": true,
+        "visible": true
+    },
+    {
+        "id": "ui_group_log_id",
+        "type": "ui-group",
+        "name": "Activity & Mission Log",
+        "page": "ui_page_id",
+        "width": "12",
+        "height": "1",
+        "order": 2,
+        "showTitle": true
+    },
+    {
+        "id": "aafad9b940ec2d94",
+        "type": "modbus-client",
+        "name": "Local Modbus",
+        "clienttype": "tcp",
+        "bufferCommands": true,
+        "stateLogEnabled": false,
+        "queueLogEnabled": false,
+        "failureLogEnabled": true,
+        "tcpHost": "192.168.1.200",
+        "tcpPort": "4196",
+        "tcpType": "DEFAULT",
+        "serialPort": "/dev/ttyUSB",
+        "serialType": "RTU-BUFFERD",
+        "serialBaudrate": 9600,
+        "serialDatabits": 8,
+        "serialStopbits": 1,
+        "serialParity": "none",
+        "serialConnectionDelay": 100,
+        "serialAsciiResponseStartDelimiter": "0x3A",
+        "unit_id": 1,
+        "commandDelay": 1,
+        "clientTimeout": 1000,
+        "reconnectOnTimeout": true,
+        "reconnectTimeout": 2000,
+        "parallelUnitIdsAllowed": true,
+        "showErrors": false,
+        "showWarnings": true,
+        "showLogs": true
+    },
+    {
+        "id": "0c441e386cd21642",
+        "type": "modbus-client",
+        "name": "Remote Modbus Server",
+        "clienttype": "tcp",
+        "bufferCommands": true,
+        "stateLogEnabled": false,
+        "queueLogEnabled": false,
+        "failureLogEnabled": true,
+        "tcpHost": "192.168.10.5",
+        "tcpPort": 502,
+        "tcpType": "DEFAULT",
+        "serialPort": "/dev/ttyUSB",
+        "serialType": "RTU-BUFFERD",
+        "serialBaudrate": 9600,
+        "serialDatabits": 8,
+        "serialStopbits": 1,
+        "serialParity": "none",
+        "serialConnectionDelay": 100,
+        "serialAsciiResponseStartDelimiter": "0x3A",
+        "unit_id": 1,
+        "commandDelay": 1,
+        "clientTimeout": 1000,
+        "reconnectOnTimeout": true,
+        "reconnectTimeout": 2000,
+        "parallelUnitIdsAllowed": true,
+        "showErrors": false,
+        "showWarnings": true,
+        "showLogs": true
+    },
+    {
+        "id": "ui_page_id",
+        "type": "ui-page",
+        "name": "Elevator Control Center",
+        "ui": "ui_base",
+        "path": "/elevator",
+        "icon": "elevator",
+        "layout": "grid",
+        "theme": "ui_theme_id",
+        "order": 1
+    },
+    {
+        "id": "ui_base",
+        "type": "ui-base",
+        "name": "Edge Dashboard",
+        "path": "/dashboard",
+        "includeClientData": true,
+        "acceptsClientConfig": [
+            "ui-notification",
+            "ui-control"
+        ]
+    },
+    {
+        "id": "ui_theme_id",
+        "type": "ui-theme",
+        "name": "Modern Industrial Theme",
+        "colors": {
+            "surface": "#ffffff",
+            "primary": "#2563eb",
+            "bgPage": "#f1f5f9"
+        }
+    },
+    {
+        "id": "2a837941ad2f42bb",
+        "type": "global-config",
+        "env": [],
+        "modules": {
+            "@flowfuse/node-red-dashboard": "1.30.2",
+            "node-red-contrib-modbus": "5.60.1"
+        }
+    }
+]

@@ -5,6 +5,10 @@
 
 set -e
 
+# --- Ensure execution from script directory ---
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+cd "$SCRIPT_DIR"
+
 # --- ANSI Color Codes ---
 CLR_RESET="\033[0m"
 CLR_INFO="\033[1;34m"
@@ -24,6 +28,8 @@ SKIP_MCU=false
 SKIP_PY=false
 OVERWRITE_CONFIG=false
 FIX_OFFLINE_WIFI=false
+INSTALL_DEPS=false
+NO_RESTART=false
 
 # --- Usage Helper ---
 show_help() {
@@ -34,41 +40,62 @@ show_help() {
     echo "  TARGET_IP               Target Linux board IP address (Default: $DEFAULT_IP)"
     echo ""
     echo "Options:"
+    echo "  -i, --ip <IP>           Specify target IP address"
     echo "  --skip-mcu              Skip Arduino MCU compilation & flashing (Fast Python update)"
     echo "  --skip-py               Skip Python files and Web UI sync (Flash MCU only)"
     echo "  --config                Force overwrite 'lift_config.json' on target"
     echo "  --fix-wifi              Apply NetworkManager offline Wi-Fi / connectivity fix"
+    echo "  --install-deps, --pip   Install / update Python requirements in target venv"
+    echo "  --no-restart            Skip restarting systemd services"
     echo "  -h, --help              Show this help menu"
     echo ""
     echo "Examples:"
-    echo "  $0 192.168.20.53"
-    echo "  $0 192.168.20.53 --skip-mcu"
-    echo "  $0 192.168.20.53 --fix-wifi"
+    echo "  $0 192.168.20.49"
+    echo "  $0 192.168.20.49 --skip-mcu"
+    echo "  $0 192.168.20.49 --install-deps"
+    echo "  $0 192.168.20.49 --fix-wifi"
     exit 0
 }
 
 # --- Parse Arguments ---
-for arg in "$@"; do
-    case $arg in
+while [[ $# -gt 0 ]]; do
+    case "$1" in
         --skip-mcu)
             SKIP_MCU=true
+            shift
             ;;
         --skip-py)
             SKIP_PY=true
+            shift
             ;;
         --config)
             OVERWRITE_CONFIG=true
+            shift
             ;;
         --fix-wifi)
             FIX_OFFLINE_WIFI=true
+            shift
+            ;;
+        --install-deps|--pip)
+            INSTALL_DEPS=true
+            shift
+            ;;
+        --no-restart)
+            NO_RESTART=true
+            shift
+            ;;
+        -i|--ip)
+            TARGET_IP="$2"
+            shift 2
             ;;
         -h|--help)
             show_help
             ;;
         *)
             if [ -z "$TARGET_IP" ]; then
-                TARGET_IP="$arg"
+                TARGET_IP="$1"
             fi
+            shift
             ;;
     esac
 done
@@ -82,6 +109,7 @@ echo -e "${CLR_INFO}🚀 Target Board       :${CLR_RESET} $TARGET_USER@$TARGET_I
 echo -e "${CLR_INFO}📂 Target Directory   :${CLR_RESET} $TARGET_DIR"
 echo -e "${CLR_INFO}⚙️  Update Python/Web  :${CLR_RESET} $([ "$SKIP_PY" = true ] && echo "SKIP" || echo "YES")"
 echo -e "${CLR_INFO}⚡ Update Arduino MCU :${CLR_RESET} $([ "$SKIP_MCU" = true ] && echo "SKIP" || echo "YES")"
+echo -e "${CLR_INFO}📦 Install Dependencies:${CLR_RESET} $([ "$INSTALL_DEPS" = true ] && echo "YES" || echo "AUTO")"
 echo -e "${CLR_INFO}💾 Overwrite Config   :${CLR_RESET} $([ "$OVERWRITE_CONFIG" = true ] && echo "YES" || echo "PRESERVE REMOTE")"
 echo -e "${CLR_INFO}🌐 Offline Wi-Fi Fix  :${CLR_RESET} $([ "$FIX_OFFLINE_WIFI" = true ] && echo "YES" || echo "NO")"
 echo -e "${CLR_INFO}============================================================${CLR_RESET}"
@@ -106,6 +134,10 @@ if [ "$SKIP_PY" = false ]; then
     ssh "$TARGET_USER@$TARGET_IP" "if [ -f $TARGET_DIR/lift_config.json ]; then cp $TARGET_DIR/lift_config.json $TARGET_DIR/lift_config.json.bak; fi"
     
     SYNC_FILES="arduino_code main.py templates"
+    if [ -f "requirements.txt" ]; then
+        SYNC_FILES="$SYNC_FILES requirements.txt"
+    fi
+
     if [ "$OVERWRITE_CONFIG" = true ]; then
         SYNC_FILES="$SYNC_FILES lift_config.json"
     else
@@ -124,16 +156,27 @@ if [ "$SKIP_PY" = false ]; then
         tar --exclude='__pycache__' --exclude='*.pyc' -czf - $SYNC_FILES | ssh "$TARGET_USER@$TARGET_IP" "tar -xzf - -C $TARGET_DIR"
     fi
 
-    # Sync main.py to main.py so systemd service runs the updated code
-    ssh "$TARGET_USER@$TARGET_IP" "cp $TARGET_DIR/main.py $TARGET_DIR/main.py"
-    echo -e "${CLR_SUCCESS}✅ Application files synced (main.py -> main.py).${CLR_RESET}"
+    # Install / check Python dependencies if requirements.txt exists or requested
+    ssh "$TARGET_USER@$TARGET_IP" "TARGET_DIR='$TARGET_DIR' INSTALL_DEPS='$INSTALL_DEPS' bash -s" << 'REMOTE_PY'
+        if [ -f "$TARGET_DIR/requirements.txt" ]; then
+            if [ -d "$TARGET_DIR/venv" ]; then
+                echo "[*] Verifying Python virtualenv dependencies ($TARGET_DIR/venv)..."
+                "$TARGET_DIR/venv/bin/pip" install -q -r "$TARGET_DIR/requirements.txt" || true
+            elif [ "$INSTALL_DEPS" = "true" ]; then
+                echo "[*] Installing Python dependencies into system Python..."
+                pip3 install --break-system-packages -q -r "$TARGET_DIR/requirements.txt" 2>/dev/null || true
+            fi
+        fi
+REMOTE_PY
+
+    echo -e "${CLR_SUCCESS}✅ Application files synced.${CLR_RESET}"
 else
     echo -e "\n${CLR_WARN}[2/5] Skipping Python and UI files sync (--skip-py).${CLR_RESET}"
 fi
 
 # --- Step 3: NetworkManager Configuration & Dynamic Hotspot Setup ---
 echo -e "\n${CLR_INFO}[3/5] Verifying Hotspot SSID ('NextElevator_<MAC>') and Network Configuration...${CLR_RESET}"
-ssh "$TARGET_USER@$TARGET_IP" "bash -s" << 'EOF'
+ssh "$TARGET_USER@$TARGET_IP" "bash -s" << 'REMOTE_NM'
     # 1. Configure Hotspot with NextElevator_<MAC>
     MAC_HEX=$(cat /sys/class/net/wl*/address /sys/class/net/wlan*/address /sys/class/net/en*/address /sys/class/net/eth*/address 2>/dev/null | tr -d ':\n ' | tr '[:lower:]' '[:upper:]' | head -c 12)
     if [ -n "$MAC_HEX" ] && [ "$MAC_HEX" != "000000000000" ]; then
@@ -145,7 +188,7 @@ ssh "$TARGET_USER@$TARGET_IP" "bash -s" << 'EOF'
         fi
         echo "   -> Hotspot SSID configured to: $HOTSPOT_SSID (Profile: MyLiftHotspot, Key: 12345678)"
     fi
-EOF
+REMOTE_NM
 echo -e "${CLR_SUCCESS}✅ Dynamic Hotspot configured on target board.${CLR_RESET}"
 
 if [ "$FIX_OFFLINE_WIFI" = true ]; then
@@ -162,7 +205,7 @@ if [ "$SKIP_MCU" = false ]; then
     ssh "$TARGET_USER@$TARGET_IP" "mkdir -p /tmp/lift && cp -r $TARGET_DIR/arduino_code/* /tmp/lift/"
     
     # Run compilation and flashing on target
-    ssh "$TARGET_USER@$TARGET_IP" "TARGET_IP_ARG='$TARGET_IP' bash -s" << 'EOF'
+    ssh "$TARGET_USER@$TARGET_IP" "TARGET_IP_ARG='$TARGET_IP' bash -s" << 'REMOTE_MCU'
         set -e
         FQBN="arduino:zephyr:unoq"
 
@@ -175,9 +218,10 @@ if [ "$SKIP_MCU" = false ]; then
         arduino-cli compile --fqbn $FQBN /tmp/lift
         echo "✅ Firmware compilation successful!"
 
-        # Identify Upload Port: Prioritize target IPv4, then local loopback, then discovered non-IPv6 ports
+        # Identify Upload Port: Prioritize 127.0.0.1 (local SWD bitbang on UNO Q Linux host), then discovered ports, then IP
         DISCOVERED_PORTS=$(arduino-cli board list 2>/dev/null | grep -E 'Arduino UNO Q|unoq' | awk '{print $1}' | grep -v ':' | grep -v '%' || true)
-        PORTS="$TARGET_IP_ARG 127.0.0.1 $DISCOVERED_PORTS"
+        ALL_PORTS="127.0.0.1 $DISCOVERED_PORTS $TARGET_IP_ARG"
+        PORTS=$(echo "$ALL_PORTS" | tr ' ' '\n' | awk '!seen[$0]++' | tr '\n' ' ')
 
         UPLOAD_SUCCESS=false
         for PORT in $PORTS; do
@@ -187,7 +231,7 @@ if [ "$SKIP_MCU" = false ]; then
             fi
 
             echo "[*] Attempting firmware upload to port: $PORT..."
-            if arduino-cli upload -p "$PORT" --fqbn "$FQBN" /tmp/lift; then
+            if arduino-cli upload -p "$PORT" --fqbn "$FQBN" /tmp/lift < /dev/null; then
                 echo "✅ MCU Flash upload successful via port: $PORT"
                 UPLOAD_SUCCESS=true
                 break
@@ -198,24 +242,34 @@ if [ "$SKIP_MCU" = false ]; then
             echo "❌ Failed to flash firmware to any available port!"
             exit 1
         fi
-EOF
+REMOTE_MCU
     echo -e "${CLR_SUCCESS}✅ MCU Firmware flashed successfully.${CLR_RESET}"
 else
     echo -e "\n${CLR_WARN}[4/5] Skipping MCU compilation and flashing (--skip-mcu).${CLR_RESET}"
 fi
 
 # --- Step 5: Restart Services & Verify Health ---
-echo -e "\n${CLR_INFO}[5/5] Restarting services on target board...${CLR_RESET}"
-ssh -t "$TARGET_USER@$TARGET_IP" "sudo systemctl restart arduino-router.service lift-service.service"
+if [ "$NO_RESTART" = false ]; then
+    echo -e "\n${CLR_INFO}[5/5] Restarting services on target board...${CLR_RESET}"
+    if ssh -t "$TARGET_USER@$TARGET_IP" "sudo systemctl restart arduino-router.service lift-service.service"; then
+        echo -e "${CLR_SUCCESS}✅ Systemd services restarted successfully.${CLR_RESET}"
+    else
+        echo -e "${CLR_WARN}⚠️  Automatic restart via sudo was not completed. You can restart manually with:${CLR_RESET}"
+        echo -e "${CLR_WARN}   ssh -t $TARGET_USER@$TARGET_IP \"sudo systemctl restart arduino-router.service lift-service.service\"${CLR_RESET}"
+    fi
 
-echo -e "\n${CLR_INFO}Verifying service status...${CLR_RESET}"
-sleep 2
+    echo -e "\n${CLR_INFO}Verifying service status...${CLR_RESET}"
+    sleep 2
 
-STATUS_REPORT=$(ssh "$TARGET_USER@$TARGET_IP" "
-    ROUTER_STAT=\$(systemctl is-active arduino-router.service 2>/dev/null || echo 'inactive')
-    LIFT_STAT=\$(systemctl is-active lift-service.service 2>/dev/null || echo 'inactive')
-    echo \"arduino-router: \$ROUTER_STAT | lift-service: \$LIFT_STAT\"
-")
+    STATUS_REPORT=$(ssh "$TARGET_USER@$TARGET_IP" "
+        ROUTER_STAT=\$(systemctl is-active arduino-router.service 2>/dev/null || echo 'inactive')
+        LIFT_STAT=\$(systemctl is-active lift-service.service 2>/dev/null || echo 'inactive')
+        echo \"arduino-router: \$ROUTER_STAT | lift-service: \$LIFT_STAT\"
+    " 2>/dev/null || echo "Unknown")
+else
+    echo -e "\n${CLR_WARN}[5/5] Skipping service restart (--no-restart).${CLR_RESET}"
+    STATUS_REPORT="Skipped"
+fi
 
 echo -e "${CLR_SUCCESS}============================================================${CLR_RESET}"
 echo -e "${CLR_SUCCESS}🎉 Deployment Completed Successfully!${CLR_RESET}"
