@@ -177,14 +177,24 @@ fi
 # --- Step 3: NetworkManager Configuration & Dynamic Hotspot Setup ---
 echo -e "\n${CLR_INFO}[3/5] Verifying Hotspot SSID ('NextElevator_<MAC>') and Network Configuration...${CLR_RESET}"
 ssh "$TARGET_USER@$TARGET_IP" "bash -s" << 'REMOTE_NM'
-    # 1. Configure Hotspot with NextElevator_<MAC>
-    MAC_HEX=$(cat /sys/class/net/wl*/address /sys/class/net/wlan*/address /sys/class/net/en*/address /sys/class/net/eth*/address 2>/dev/null | tr -d ':\n ' | tr '[:lower:]' '[:upper:]' | head -c 12)
-    if [ -n "$MAC_HEX" ] && [ "$MAC_HEX" != "000000000000" ]; then
-        HOTSPOT_SSID="NextElevator_${MAC_HEX}"
+    # 1. Clean up any corrupted profiles with trailing backslash or newline
+    nmcli -t -f UUID,NAME con show 2>/dev/null | while IFS=: read -r uuid cname; do
+        if [[ "$cname" == *"\\"* ]] || [[ "$cname" == *"/"* ]] || [[ "$cname" == *"\n"* ]]; then
+            nmcli con delete uuid "$uuid" > /dev/null 2>&1 || true
+        fi
+    done
+
+    # 2. Configure Hotspot with NextElevator_<MAC> (Strictly 12 hex characters)
+    PERM_MAC=$(ethtool -P wlan0 2>/dev/null | awk '{print $NF}' | tr -cd '0-9A-Fa-f' | tr '[:lower:]' '[:upper:]' | head -c 12)
+    if [ -z "$PERM_MAC" ] || [ "$PERM_MAC" = "000000000000" ]; then
+        PERM_MAC=$(cat /sys/class/net/wl*/address /sys/class/net/wlan*/address /sys/class/net/en*/address /sys/class/net/eth*/address 2>/dev/null | tr -cd '0-9A-Fa-f' | tr '[:lower:]' '[:upper:]' | head -c 12)
+    fi
+    if [ -n "$PERM_MAC" ] && [ "$PERM_MAC" != "000000000000" ]; then
+        HOTSPOT_SSID="NextElevator_${PERM_MAC}"
         if nmcli -t -f NAME con show | grep -Fx "MyLiftHotspot" > /dev/null 2>&1; then
-            nmcli con mod "MyLiftHotspot" 802-11-wireless.ssid "$HOTSPOT_SSID" connection.autoconnect-priority 0 > /dev/null 2>&1 || true
+            nmcli con mod "MyLiftHotspot" 802-11-wireless.ssid "$HOTSPOT_SSID" 802-11-wireless.cloned-mac-address permanent connection.autoconnect no connection.autoconnect-priority 0 > /dev/null 2>&1 || true
         else
-            nmcli con add type wifi ifname wlan0 con-name "MyLiftHotspot" autoconnect no ssid "$HOTSPOT_SSID" 802-11-wireless.mode ap 802-11-wireless.band bg ipv4.method shared 802-11-wireless-security.key-mgmt wpa-psk 802-11-wireless-security.psk 12345678 connection.autoconnect-priority 0 > /dev/null 2>&1 || true
+            nmcli con add type wifi ifname wlan0 con-name "MyLiftHotspot" autoconnect no ssid "$HOTSPOT_SSID" 802-11-wireless.mode ap 802-11-wireless.band bg 802-11-wireless.cloned-mac-address permanent ipv4.method shared 802-11-wireless-security.key-mgmt wpa-psk 802-11-wireless-security.psk 12345678 connection.autoconnect-priority 0 > /dev/null 2>&1 || true
         fi
         echo "   -> Hotspot SSID configured to: $HOTSPOT_SSID (Profile: MyLiftHotspot, Key: 12345678)"
     fi

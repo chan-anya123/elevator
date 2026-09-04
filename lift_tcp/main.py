@@ -12,6 +12,7 @@ from pyModbusTCP.server import ModbusServer
 from pyModbusTCP.client import ModbusClient
 import shlex
 from enum import IntEnum
+import re
 try:
     from zeroconf import Zeroconf, ServiceInfo
 except ImportError:
@@ -471,59 +472,138 @@ def run_board_mission(robot_client, server_1502, target_floor_num):
         is_mission_busy = False
 
 def get_mac():
+    def _clean(raw):
+        if not raw:
+            return None
+        # Remove any oneline continuation backslashes '\', slashes '/', whitespace, quotes, newlines
+        clean = re.sub(r'[^0-9a-fA-F:]', '', str(raw)).strip(':').lower()
+        parts = clean.split(':')
+        if len(parts) == 6 and all(0 < len(p) <= 2 for p in parts):
+            fmt = ":".join(f"{int(p, 16):02x}" for p in parts)
+            if fmt != "00:00:00:00:00:00":
+                return fmt
+        hex_only = re.sub(r'[^0-9a-fA-F]', '', str(raw)).lower()
+        if len(hex_only) >= 12:
+            h = hex_only[:12]
+            if h != "000000000000":
+                return ":".join(h[i:i+2] for i in range(0, 12, 2))
+        return None
+
+    # 1. Primary: query permanent hardware MAC using ethtool or ip link
     for interface in ["wlan0", "wlp45s0", "eth0", "enp0s0", "enx04bf1bb5a5b8"]:
+        try:
+            res = subprocess.run(f"ethtool -P {interface} 2>/dev/null", shell=True, capture_output=True, text=True, timeout=1.0)
+            if "Permanent address:" in res.stdout:
+                mac = _clean(res.stdout.split("Permanent address:")[-1])
+                if mac:
+                    return mac
+        except Exception:
+            pass
+
+        try:
+            res = subprocess.run(f"ip -o link show {interface} 2>/dev/null", shell=True, capture_output=True, text=True, timeout=1.0)
+            if "permaddr" in res.stdout:
+                mac = _clean(res.stdout.split("permaddr")[-1])
+                if mac:
+                    return mac
+        except Exception:
+            pass
+
         try:
             path = f"/sys/class/net/{interface}/address"
             if os.path.exists(path):
                 with open(path, "r") as f:
-                    addr = f.read().strip().lower()
-                    if addr and addr != "00:00:00:00:00:00":
-                        return addr
+                    mac = _clean(f.read())
+                    if mac:
+                        return mac
         except Exception:
             continue
+
     try:
         net_dir = "/sys/class/net"
         if os.path.exists(net_dir):
             for iface in os.listdir(net_dir):
-                if iface == "lo" or iface.startswith("docker") or iface.startswith("br-") or iface.startswith("veth"):
+                if iface == "lo" or iface.startswith(("docker", "br-", "veth")):
                     continue
                 path = f"{net_dir}/{iface}/address"
                 if os.path.exists(path):
                     with open(path, "r") as f:
-                        addr = f.read().strip().lower()
-                        if addr and addr != "00:00:00:00:00:00":
-                            return addr
+                        mac = _clean(f.read())
+                        if mac:
+                            return mac
     except Exception:
         pass
     return "00:00:00:00:00:00"
 
 def get_hostname():
-    mac = get_mac().replace(":", "").replace("-", "").strip()
-    last4 = mac[-4:].lower() if len(mac) >= 4 else "0000"
+    mac = re.sub(r'[^0-9a-fA-F]', '', get_mac()).lower()
+    last4 = mac[-4:] if len(mac) >= 4 else "0000"
     return f"lift{last4}"
 
 def get_hotspot_ssid():
-    mac_clean = get_mac().replace(":", "").replace("-", "").strip().upper()
+    raw_mac = get_mac()
+    mac_clean = re.sub(r'[^0-9A-Fa-f]', '', raw_mac).upper()[:12]
     if not mac_clean or mac_clean == "000000000000":
         return "NextElevator_AP"
     return f"NextElevator_{mac_clean}"
+
+def is_hotspot_connection(con_name):
+    if not con_name:
+        return False
+    name = str(con_name).strip()
+    hotspot_ssid = get_hotspot_ssid()
+    if (name == HOTSPOT_NAME or
+        name == "Hotspot" or
+        name == hotspot_ssid or
+        name.startswith("NextElevator_")):
+        return True
+    try:
+        res = subprocess.run(
+            f"nmcli -t -f 802-11-wireless.mode con show {shlex.quote(name)} 2>/dev/null",
+            shell=True, capture_output=True, text=True, timeout=1.5
+        )
+        if "ap" in res.stdout.lower():
+            return True
+    except Exception:
+        pass
+    return False
 
 def ensure_hotspot_profile():
     try:
         hotspot_ssid = get_hotspot_ssid()
         safe_ssid = shlex.quote(hotspot_ssid)
         safe_name = shlex.quote(HOTSPOT_NAME)
-        res = subprocess.run(f"nmcli -t -f NAME con show | grep -Fx {safe_name}", shell=True, capture_output=True, text=True)
+
+        # 1. Clean up any corrupted profiles with trailing backslash, slash, or newline in name
+        res_all = subprocess.run("nmcli -t -f UUID,NAME con show", shell=True, capture_output=True, text=True, timeout=5)
+        for line in res_all.stdout.strip().split('\n'):
+            if not line:
+                continue
+            parts = line.split(':')
+            if len(parts) >= 2:
+                uuid = parts[0].strip()
+                cname = parts[1].strip()
+                if '\\' in cname or '/' in cname or cname.endswith('\\n'):
+                    subprocess.run(f"nmcli con delete uuid {uuid} > /dev/null 2>&1", shell=True, timeout=5)
+
+        # 2. Ensure canonical HOTSPOT_NAME profile exists and is correctly configured
+        res = subprocess.run(f"nmcli -t -f NAME con show | grep -Fx {safe_name}", shell=True, capture_output=True, text=True, timeout=3)
         if res.returncode == 0:
-            subprocess.run(f"nmcli con mod {safe_name} 802-11-wireless.ssid {safe_ssid} connection.autoconnect-priority 0 > /dev/null 2>&1", shell=True)
+            subprocess.run(
+                f"nmcli con mod {safe_name} 802-11-wireless.ssid {safe_ssid} "
+                f"802-11-wireless.cloned-mac-address permanent connection.autoconnect no "
+                f"connection.autoconnect-priority 0 > /dev/null 2>&1",
+                shell=True, timeout=5
+            )
         else:
             cmd = (
                 f"nmcli con add type wifi con-name {safe_name} autoconnect no "
                 f"ssid {safe_ssid} 802-11-wireless.mode ap 802-11-wireless.band bg "
+                f"802-11-wireless.cloned-mac-address permanent "
                 f"ipv4.method shared 802-11-wireless-security.key-mgmt wpa-psk "
                 f"802-11-wireless-security.psk 12345678 connection.autoconnect-priority 0 > /dev/null 2>&1"
             )
-            subprocess.run(cmd, shell=True)
+            subprocess.run(cmd, shell=True, timeout=5)
         print(f"[Hotspot Config] Recovery Hotspot configured: SSID='{hotspot_ssid}', Profile='{HOTSPOT_NAME}'")
     except Exception as e:
         print(f"[Hotspot Config Warning] Could not configure hotspot profile: {e}")
@@ -561,6 +641,15 @@ def start_mdns(port=5000):
 # =========================================================
 # FLASK HTTP REST API & WEB UI ROUTES
 # =========================================================
+last_web_activity = 0.0
+
+@app.before_request
+def track_web_activity():
+    global last_web_activity
+    # Exclude background status polling so it doesn't block watchdog attempts
+    if request.path not in ["/status", "/favicon.ico"]:
+        last_web_activity = time.time()
+
 @app.route("/")
 def index():
     return render_template("ui.html")
@@ -710,7 +799,7 @@ def set_network_mode():
         try:
             res = subprocess.run("nmcli -t -f NAME,TYPE connection show --active | grep ':802-11-wireless' | cut -d: -f1", shell=True, capture_output=True, text=True)
             active_con = res.stdout.strip().split('\n')[0] if res.stdout.strip() else ""
-            if not active_con or active_con == HOTSPOT_NAME:
+            if not active_con or is_hotspot_connection(active_con):
                 return
 
             safe_con = shlex.quote(active_con)
@@ -799,18 +888,28 @@ def change_wifi():
             if res.returncode == 0:
                 print(f"[WiFi Success] Connected to '{target_ssid}' successfully!")
 
+                # Persist target Wi-Fi SSID in configuration
+                try:
+                    with data_lock:
+                        cached_config["target_wifi_ssid"] = target_ssid
+                        with open(CONFIG_PATH, "w") as f:
+                            json.dump(cached_config, f, indent=4)
+                except Exception:
+                    pass
+
                 # Demote all other saved Wi-Fi connections to Priority 0
                 try:
                     res_cons = subprocess.run("nmcli -t -f NAME,TYPE connection show | grep ':802-11-wireless' | cut -d: -f1", shell=True, capture_output=True, text=True)
                     for con_name in res_cons.stdout.strip().split('\n'):
                         con_name = con_name.strip()
-                        if con_name and con_name != target_ssid and con_name != HOTSPOT_NAME:
+                        if con_name and con_name != target_ssid and not is_hotspot_connection(con_name):
                             subprocess.run(f"nmcli con mod {shlex.quote(con_name)} connection.autoconnect-priority 0 > /dev/null 2>&1", shell=True)
                 except Exception:
                     pass
 
-                # Set chosen Wi-Fi as exclusive top priority (100)
-                subprocess.run(f"nmcli con mod {safe_ssid} connection.autoconnect-priority 100 > /dev/null 2>&1", shell=True)
+                # Set chosen Wi-Fi as exclusive top priority (100) with robust recovery flags
+                subprocess.run(f"nmcli con mod {safe_ssid} connection.autoconnect yes connection.autoconnect-priority 100 connection.autoconnect-retries 0 802-11-wireless.powersave 2 > /dev/null 2>&1", shell=True)
+                ensure_hotspot_profile()
             else:
                 # Connection truly failed: restore Hotspot mode
                 print(f"[WiFi Error] Failed to activate '{target_ssid}': {res.stderr.strip()}")
@@ -830,6 +929,7 @@ def change_wifi():
 
 @app.route('/reset_to_hotspot', methods=['POST'])
 def reset_to_hotspot():
+    ensure_hotspot_profile()
     safe_hotspot = shlex.quote(HOTSPOT_NAME)
     subprocess.Popen(f"nmcli con up {safe_hotspot}", shell=True)
     return jsonify({"status": "ok"})
@@ -897,7 +997,167 @@ def update_status_loop(server_1502):
                     time.sleep(2)
         except Exception: 
             pass
-        time.sleep(0.4)
+# =========================================================
+# WI-FI AUTO-RECOVERY & HOTSPOT WATCHDOG
+# =========================================================
+def get_saved_wifi_profiles():
+    """
+    Returns a list of saved Wi-Fi client connection names, ordered by priority.
+    Excludes all Hotspot profiles.
+    """
+    profiles = []
+    with data_lock:
+        target = cached_config.get("target_wifi_ssid")
+        if target and not is_hotspot_connection(target):
+            profiles.append(target)
+
+    try:
+        res = subprocess.run(
+            "nmcli -t -f NAME,TYPE,AUTOCONNECT-PRIORITY connection show",
+            shell=True, capture_output=True, text=True, timeout=3
+        )
+        candidates = []
+        for line in res.stdout.strip().split('\n'):
+            if not line: continue
+            parts = line.split(':')
+            if len(parts) >= 2 and parts[1] == '802-11-wireless':
+                name = parts[0].strip()
+                if name and not is_hotspot_connection(name):
+                    prio = int(parts[2]) if len(parts) > 2 and parts[2].isdigit() else 0
+                    if name not in profiles:
+                        candidates.append((prio, name))
+        if candidates:
+            candidates.sort(key=lambda x: x[0], reverse=True)
+            for _, name in candidates:
+                profiles.append(name)
+    except Exception:
+        pass
+    return profiles
+
+def get_primary_wifi():
+    """
+    Returns the target production Wi-Fi SSID / profile to reconnect to.
+    Prioritizes:
+    1. Configured 'target_wifi_ssid' in lift_config.json
+    2. Saved Wi-Fi profile with highest autoconnect-priority (excluding all Hotspot profiles)
+    """
+    saved = get_saved_wifi_profiles()
+    return saved[0] if saved else None
+
+def wifi_recovery_watchdog():
+    """
+    Wi-Fi Auto-Recovery & Hotspot Watchdog:
+    1. Boot grace period: Wait up to 60s (1 min) for NetworkManager to connect to known Wi-Fi.
+       If still no Wi-Fi/IP, activates Recovery Hotspot so the board is always accessible.
+    2. While connected to Wi-Fi:
+       Monitors Wi-Fi connection and valid IP.
+       If Wi-Fi drops or loses connection for >= 60s (1 min), activates Recovery Hotspot.
+    3. While in Hotspot mode:
+       Every 2 minutes (120s), probes if primary Wi-Fi is back:
+       - If Wi-Fi is back: Connects automatically and deactivates Hotspot!
+       - If Wi-Fi is not back: Immediately restores Hotspot mode.
+    """
+    global last_web_activity
+    print("----- Wi-Fi Auto-Recovery Watchdog Started -----")
+
+    # 1. Boot grace period (up to 60s / 1 min)
+    boot_start = time.time()
+    while time.time() - boot_start < 60:
+        time.sleep(2)
+        ip = get_ip()
+        if ip and ip != "0.0.0.0" and not ip.startswith("10.42."):
+            print(f"[WiFi Watchdog] Primary Wi-Fi connected on boot (IP: {ip}).")
+            break
+
+    # If still no valid IP after boot grace period, bring up Hotspot so board is accessible
+    last_probe_time = time.time()
+    ip = get_ip()
+    if not ip or ip == "0.0.0.0" or ip.startswith("10.42."):
+        print("[WiFi Watchdog] No Wi-Fi connected after boot grace period (1 min). Starting Recovery Hotspot...")
+        ensure_hotspot_profile()
+        safe_hotspot = shlex.quote(HOTSPOT_NAME)
+        subprocess.run(f"nmcli con up {safe_hotspot} > /dev/null 2>&1", shell=True)
+        last_probe_time = time.time()
+
+    disconnected_since = None
+
+    while True:
+        try:
+            time.sleep(5)
+
+            # Skip watchdog if user is actively initiating Wi-Fi change via Web UI
+            if wifi_lock.locked():
+                continue
+
+            # Query active 802-11-wireless connection name
+            res = subprocess.run(
+                "nmcli -t -f NAME,TYPE connection show --active | grep ':802-11-wireless' | cut -d: -f1",
+                shell=True, capture_output=True, text=True, timeout=3
+            )
+            active_con = res.stdout.strip().split('\n')[0].strip() if res.stdout.strip() else ""
+            is_hs = is_hotspot_connection(active_con)
+            current_ip = get_ip()
+            has_valid_ip = bool(current_ip and current_ip != "0.0.0.0" and not current_ip.startswith("10.42."))
+
+            # ----------------------------------------------------
+            # CASE A: Currently running in Hotspot Mode
+            # ----------------------------------------------------
+            if is_hs:
+                disconnected_since = None
+                now = time.time()
+
+                # Check every 120s (2 minutes), defer only if user submitted Web UI form in last 30s
+                if (now - last_probe_time >= 120) and (now - last_web_activity >= 30):
+                    last_probe_time = now
+                    primary_wifi = get_primary_wifi()
+
+                    if primary_wifi:
+                        print(f"[WiFi Watchdog] 2-minute interval check: Probing if Wi-Fi '{primary_wifi}' is back...")
+                        safe_target = shlex.quote(primary_wifi)
+
+                        # Attempt to connect to primary Wi-Fi (timeout 12s)
+                        res_test = subprocess.run(
+                            f"nmcli connection up {safe_target}",
+                            shell=True, capture_output=True, text=True, timeout=12
+                        )
+
+                        if res_test.returncode == 0:
+                            print(f"🎉 [WiFi Watchdog] Primary Wi-Fi '{primary_wifi}' is BACK! Restored Wi-Fi successfully.")
+                            # Ensure primary Wi-Fi maintains priority 100, autoconnect yes, powersave 2
+                            subprocess.run(
+                                f"nmcli con mod {safe_target} connection.autoconnect yes connection.autoconnect-priority 100 connection.autoconnect-retries 0 802-11-wireless.powersave 2 > /dev/null 2>&1",
+                                shell=True
+                            )
+                            ensure_hotspot_profile()
+                        else:
+                            print(f"[WiFi Watchdog] Primary Wi-Fi '{primary_wifi}' not yet available. Restoring Hotspot.")
+                            safe_hotspot = shlex.quote(HOTSPOT_NAME)
+                            subprocess.run(f"nmcli con up {safe_hotspot} > /dev/null 2>&1", shell=True)
+                            last_probe_time = time.time()
+
+            # ----------------------------------------------------
+            # CASE B: Connected to Production Wi-Fi with valid IP
+            # ----------------------------------------------------
+            elif active_con and has_valid_ip:
+                disconnected_since = None
+
+            # ----------------------------------------------------
+            # CASE C: Wi-Fi lost / disconnected / no IP
+            # ----------------------------------------------------
+            else:
+                if disconnected_since is None:
+                    disconnected_since = time.time()
+                    print("[WiFi Watchdog] Wi-Fi lost / disconnected. Starting 1-minute countdown to Hotspot...")
+                elif time.time() - disconnected_since >= 60:
+                    print("[WiFi Watchdog] Wi-Fi disconnected for 1 minute (60s). Activating Recovery Hotspot...")
+                    ensure_hotspot_profile()
+                    safe_hotspot = shlex.quote(HOTSPOT_NAME)
+                    subprocess.run(f"nmcli con up {safe_hotspot} > /dev/null 2>&1", shell=True)
+                    disconnected_since = None
+                    last_probe_time = time.time()
+
+        except Exception:
+            pass
 
 # =========================================================
 # MAIN ENTRY POINT
@@ -953,6 +1213,7 @@ if __name__ == "__main__":
     threading.Thread(target=update_status_loop, args=(server_1502,), daemon=True).start()
     threading.Thread(target=modbus_sync_loop, args=(robot_client, server_1502), daemon=True).start()
     threading.Thread(target=mission_scanner_loop, args=(robot_client, server_1502), daemon=True).start()
+    threading.Thread(target=wifi_recovery_watchdog, daemon=True).start()
 
     ensure_hotspot_profile()
     mdns_obj = start_mdns(5000)

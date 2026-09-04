@@ -65,10 +65,11 @@ This document provides a comprehensive operational and technical manual for the 
    - Active Wi-Fi assigned **Top Priority 100** (`connection.autoconnect-priority 100`).
    - All other saved Wi-Fi profiles are automatically demoted to **Priority 0** to prevent competing connections.
    - **Infinite Retries** (`connection.autoconnect-retries 0`) and disabled power save (`802-11-wireless.powersave 2`) ensure the board stays connected continuously without dropping out.
-9. **Dynamic Recovery Hotspot (`NextElevator_<MAC>`)**:
-   - Hotspot SSID dynamically generated as `NextElevator_<MAC>` (e.g. `NextElevator_14B5CD0F473F`) based on the hardware MAC address.
-   - Automatically verified and created on startup via `ensure_hotspot_profile()`.
-   - Emergency fallback activates Hotspot only when Wi-Fi connection attempts truly fail.
+9. **Dynamic Recovery Hotspot & Auto-Recovery Watchdog**:
+   - Hotspot SSID dynamically generated as `NextElevator_<MAC>` (e.g. `NextElevator_14B5CDE14225`) strictly formatted to 12 hex characters without escape characters or trailing slashes.
+   - Automatically configured on startup via `ensure_hotspot_profile()`.
+   - **1-Minute Failover**: Activates Recovery Hotspot if station Wi-Fi drops or loses valid IP for > 60 seconds.
+   - **2-Minute Auto-Reconnection**: Every 2 minutes while in Hotspot mode, automatically probes the primary Wi-Fi and latches back onto it once the router/AP returns.
 
 ---
 
@@ -460,20 +461,81 @@ On local networks without WAN internet connectivity:
 
 ### 9.3 Dynamic Recovery Hotspot
 - **Profile Name**: `MyLiftHotspot`
-- **SSID**: `NextElevator_<MAC>` (e.g. `NextElevator_14B5CD0F473F`)
+- **SSID Format**: `NextElevator_<MAC>` (e.g. `NextElevator_14B5CDE14225`)
+  - Guaranteed clean format: strictly 12 uppercase hexadecimal characters without any trailing slashes (`/`), backslashes (`\`), or newline characters.
 - **Default WPA2 Password**: `12345678`
-- **Autoconnect Priority**: `0` (Prevents Hotspot from taking precedence over station Wi-Fi).
-- **Auto-Provisioning**: On startup, `ensure_hotspot_profile()` ensures the Hotspot profile is configured with the board's unique MAC address.
+- **Autoconnect Priority**: `0` (Prevents Hotspot from competing with production station Wi-Fi).
+- **Autoconnect**: `no` (Explicitly managed by the software watchdog).
+- **Auto-Provisioning**: On startup, `ensure_hotspot_profile()` automatically queries the board's permanent hardware MAC, sanitizes it, removes any obsolete or corrupted connection profiles containing escape characters, and configures `MyLiftHotspot`.
+
+### 9.4 Wi-Fi Auto-Recovery Watchdog (`wifi_recovery_watchdog`)
+The application runs a dedicated background watchdog thread (`wifi_recovery_watchdog`) that guarantees high availability and zero-touch reconnection:
+
+```text
+               +-------------------------------------------------------+
+               |  Normal Operation (Connected to Production Wi-Fi)     |
+               |  - Autoconnect: yes, Priority: 100, Retries: 0        |
+               +---------------------------+---------------------------+
+                                           |
+                                           | Wi-Fi lost / disconnected
+                                           v
+               +-------------------------------------------------------+
+               |  Countdown Timer Started (60 Seconds / 1 Minute)      |
+               +---------------------------+---------------------------+
+                                           |
+                                           | Disconnected > 60s
+                                           v
+               +-------------------------------------------------------+
+               |  Activate Recovery Hotspot (NextElevator_<MAC>)       |
+               |  - Emergency Wi-Fi AP broadcasted                     |
+               |  - Allows local engineering & diagnostic access        |
+               +---------------------------+---------------------------+
+                                           |
+                                           | Every 2 Minutes (120s)
+                                           v
+               +-------------------------------------------------------+
+               |  Probe Primary Production Wi-Fi Network               |
+               +---------------------------+---------------------------+
+                             /                           \
+               (Wi-Fi Back) /                             \ (Wi-Fi Still Down)
+                           v                               v
++---------------------------------------+     +---------------------------------------+
+| Reconnect to Production Wi-Fi         |     | Restore Hotspot Mode                  |
+| - Verify valid IPv4 address           |     | - Continue broadcasting AP            |
+| - Deactivate Hotspot mode             |     | - Wait for next 2-minute probe        |
++---------------------------------------+     +---------------------------------------+
+```
+
+#### Operational Workflow:
+1. **Boot Grace Period (60s)**: On initial boot, the watchdog waits up to 60 seconds for NetworkManager to associate with a known production Wi-Fi. If no valid IP is obtained after 60 seconds, Recovery Hotspot mode is immediately activated.
+2. **1-Minute Disconnect Failover**: When operating on station Wi-Fi, if the connection drops or loses valid IP assignment continuously for 60 seconds (1 minute), the board switches to Recovery Hotspot (`NextElevator_<MAC>`).
+3. **2-Minute Periodic Auto-Reconnection**: While in Hotspot mode, the board checks every 2 minutes (120 seconds) to probe if the primary Wi-Fi network has returned.
+4. **Zero-Touch Seamless Handover**:
+   - If the primary Wi-Fi is detected: the board automatically reconnects, verifies IP connectivity, promotes the Wi-Fi profile to Priority 100, and restores normal operation.
+   - If the primary Wi-Fi is still unreachable: it immediately restores Hotspot mode so engineering access is never lost.
+
+#### Verified Production Log Example:
+```text
+[WiFi Watchdog] Primary Wi-Fi connected on boot (IP: 172.20.10.2).
+...
+[WiFi Watchdog] Wi-Fi lost / disconnected. Starting 1-minute countdown to Hotspot...
+[WiFi Watchdog] Wi-Fi disconnected for 1 minute (60s). Activating Recovery Hotspot...
+[Hotspot Config] Recovery Hotspot configured: SSID='NextElevator_14B5CDE14225', Profile='MyLiftHotspot'
+...
+[WiFi Watchdog] 2-minute interval check: Probing if Wi-Fi 'bunny_phone' is back...
+🎉 [WiFi Watchdog] Primary Wi-Fi 'bunny_phone' is BACK! Restored Wi-Fi successfully.
+[Hotspot Config] Recovery Hotspot configured: SSID='NextElevator_14B5CDE14225', Profile='MyLiftHotspot'
+```
 
 ---
 
-## 10. Deployment & Remote Update (`update_mcu_v2.sh`)
+## 10. Deployment & Remote Update (`update_mcu.sh`)
 
-[`update_mcu_v2.sh`](file:///home/cookies/lift/arduino_uno_q/update_mcu_v2.sh) automates application syncing, remote MCU firmware compilation, and service deployment across elevator controllers over SSH.
+[`update_mcu.sh`](update_mcu.sh) automates application syncing, remote MCU firmware compilation, and service deployment across elevator controllers over SSH.
 
 ### 10.1 Usage Syntax
 ```bash
-./update_mcu_v2.sh [TARGET_IP] [OPTIONS]
+./update_mcu.sh [TARGET_IP] [OPTIONS]
 ```
 
 ### 10.2 Command Options
@@ -490,13 +552,13 @@ On local networks without WAN internet connectivity:
 ### 10.3 Examples
 
 ```bash
-# Fast update for Python code, Web UI, and Wi-Fi logic (no MCU flash)
-./update_mcu_v2.sh 192.168.20.49 --skip-mcu
+# Fast update for Python code, Web UI, and Wi-Fi watchdog (no MCU compile/flash)
+./update_mcu.sh 192.168.20.49 --skip-mcu
 
-# Complete update (Python + UI + STM32U5 MCU firmware flashing)
-./update_mcu_v2.sh 192.168.20.49
+# Complete update (Python + Web UI + Arduino Zephyr MCU firmware flashing)
+./update_mcu.sh 192.168.20.49
 
 # Update with offline Wi-Fi fix applied
-./update_mcu_v2.sh 192.168.20.49 --fix-wifi
+./update_mcu.sh 192.168.20.49 --fix-wifi
 ```
 

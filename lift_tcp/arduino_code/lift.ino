@@ -6,7 +6,7 @@
 /* --- New Pin Configuration (Low Active) --- */
 #define BUTTON_UP A2
 #define BUTTON_DOWN A3
-#define DOOR_SENSOR 3    //A1
+#define DOOR_SENSOR A4   //A1
 #define SOLENOID_UP 4    // Relay 1 11
 #define SOLENOID_DOWN 7  // Relay 2
 #define LED_UP 8         // Relay 3
