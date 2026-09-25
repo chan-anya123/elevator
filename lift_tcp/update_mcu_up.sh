@@ -128,12 +128,12 @@ ssh "$TARGET_USER@$TARGET_IP" "mkdir -p $TARGET_DIR"
 
 # --- Step 2: Sync Python / Web Files ---
 if [ "$SKIP_PY" = false ]; then
-    echo -e "\n${CLR_INFO}[2/5] Syncing application files (main.py, templates, firmware sketch)...${CLR_RESET}"
+    echo -e "\n${CLR_INFO}[2/5] Syncing application files (main_up.py, templates, firmware sketch)...${CLR_RESET}"
     
     # Backup remote config before sync
     ssh "$TARGET_USER@$TARGET_IP" "if [ -f $TARGET_DIR/lift_config.json ]; then cp $TARGET_DIR/lift_config.json $TARGET_DIR/lift_config.json.bak; fi"
     
-    SYNC_FILES="arduino_code main.py templates"
+    SYNC_FILES="arduino_code main_up.py templates"
     if [ -f "requirements.txt" ]; then
         SYNC_FILES="$SYNC_FILES requirements.txt"
     fi
@@ -155,6 +155,9 @@ if [ "$SKIP_PY" = false ]; then
         echo -e "${CLR_WARN}rsync not available on target; using tar stream...${CLR_RESET}"
         tar --exclude='__pycache__' --exclude='*.pyc' -czf - $SYNC_FILES | ssh "$TARGET_USER@$TARGET_IP" "tar -xzf - -C $TARGET_DIR"
     fi
+
+    # Ensure main_up.py is used as the active main.py on the target and clean up
+    ssh "$TARGET_USER@$TARGET_IP" "mv $TARGET_DIR/main_up.py $TARGET_DIR/main.py"
 
     # Install / check Python dependencies if requirements.txt exists or requested
     ssh "$TARGET_USER@$TARGET_IP" "TARGET_DIR='$TARGET_DIR' INSTALL_DEPS='$INSTALL_DEPS' bash -s" << 'REMOTE_PY'

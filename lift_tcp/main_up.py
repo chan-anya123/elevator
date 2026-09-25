@@ -426,8 +426,7 @@ def run_board_mission(robot_client, server_1502, target_floor_num):
     elif current_f == 4:
         action_cmd = 2; led_cmd = 4
     else:
-        action_cmd = 1 if target_floor_num >= current_f else 2
-        led_cmd = 3 if target_floor_num >= current_f else 4
+        action_cmd = 1; led_cmd = 3
 
     mission_status = Sequence.IDLE
 
